@@ -1,4 +1,4 @@
-# ldm-skill
+# LDM-skill
 
 **李大魔的 AI Skills 合集。** 每个 skill 都来自真实工作流里踩过的坑，先在自己身上用顺，再拿出来。
 
