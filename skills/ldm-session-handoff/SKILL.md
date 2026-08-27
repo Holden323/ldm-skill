@@ -1,5 +1,5 @@
 ---
-name: agent-session-handoff
+name: ldm-session-handoff
 description: |
   AI交接班三件套：会话存档标准流程。用户说「记录聊天记录」「准备退出重启」「存档」
   「给我一个重启提示语」「对话全记录」「对话路由器」时触发。
