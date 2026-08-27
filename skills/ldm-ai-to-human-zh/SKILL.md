@@ -1,5 +1,5 @@
 ---
-name: ai-to-human-zh
+name: ldm-ai-to-human-zh
 description: |
   AI 人味儿汉译汉：把 AI 写的中文改成人话。综合 AI 特征检测框架、去AI味方法论、批量内容生产的实战经验。适用于任何需要去除 AI 痕迹的中文文案改写场景。
 trigger: 当用户说「去AI味」「人味儿」「汉译汉」「AI检测」「改得像人话」时触发
