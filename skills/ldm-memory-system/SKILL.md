@@ -90,12 +90,22 @@ description: |
 
 适用：用户说「清理memory」「memory体检」「跑一遍项目」；或新增memory条目时按写入铁律执行。
 
-五步（详见 references/scan-workflow.md）：
-1. 逐条判定：每条内容过四问
+**先跑机械扫描脚本**（确定性检查，只读不改）：
+
+```bash
+python3 scripts/scan.py <目标目录> [--depth 2] [--compact]
+```
+
+脚本检查6类问题：无README目录 / 根目录散落文件 / 同名文件跨目录（冗余或分叉）/ 同名目录跨位置 / 空目录 / 目录内同名文件。借鉴 claude-obsidian wiki-lint：**引擎只报告，AI负责解释发现、判断意图、产出三张清单**。
+
+然后五步（详见 references/scan-workflow.md）：
+1. 逐条判定：每条内容过四问（脚本结果作为输入，AI不重复机械劳动）
 2. 验证指针：fetch/stat/cronjob list 当场验证
 3. 三张清单：待删除候审单 / 待降级归档单 / 指针失效单
 4. 用户拍板：说删才删，说留就留（硬卡点，不能跳）
 5. 踩坑记录本：新坑写回本skill
+
+文件夹整理规范（项目归属/归位/归档/模式选择）见 `references/folder-rules.md`。
 
 ## 四、毕业标准（什么时候文档→skill）
 
@@ -209,3 +219,5 @@ Hermes_Workspace 根README描述"选题库/素材库/已发布/数据分析"，�
 
 - `references/setup-guide.md` — 阶段一搭建工作流（3问→五步→最小可行版）
 - `references/scan-workflow.md` — 阶段二维护工作流（逐条判定→验证指针→三张清单→执行→写踩坑记录本）
+- `references/folder-rules.md` — 文件夹整理规范（模式选择+五条原则+归档规范）
+- `scripts/scan.py` — 机械扫描脚本（只读，6类检查，AI解释结果并出清单）
