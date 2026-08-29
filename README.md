@@ -39,7 +39,7 @@ npx -y skills add Holden323/ldm-skill --skill ai-to-human-zh -g
 
 详见 [skills/ai-to-human-zh](./skills/ai-to-human-zh/)。
 
-### 2. AI交接班三件套（agent-session-handoff）
+### 2. AI交接班三件套（ldm-session-handoff）
 
 **AI 没有记性，但可以交接班。**
 
@@ -56,9 +56,9 @@ npx -y skills add Holden323/ldm-skill --skill ai-to-human-zh -g
 核心原则只有一条：**恢复上下文需要档案原件，不是转述。** 所以全记录必须从数据库直读导出，禁止摘要冒充。
 
 用法：跟 Agent 说 **"准备退出重启，记录对话全记录"**，或单独跑脚本：
-`python3 skills/agent-session-handoff/scripts/export_transcript.py --list`
+`python3 skills/ldm-session-handoff/scripts/export_transcript.py --list`
 
-详见 [skills/agent-session-handoff](./skills/agent-session-handoff/)。
+详见 [skills/ldm-session-handoff](./skills/ldm-session-handoff/)。
 
 ---
 
