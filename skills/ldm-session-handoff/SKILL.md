@@ -1,7 +1,8 @@
 ---
 name: ldm-session-handoff
+version: "1.0"
 description: |
-  AI交接班三件套：会话存档标准流程。用户说「记录聊天记录」「准备退出重启」「存档」
+  AI交接班三件套：会话存档标准流程。用户说「记录聊天记录」「准备退出重启」「会话存档」
   「给我一个重启提示语」「对话全记录」「对话路由器」时触发。
   三步缺一不可：①对话全记录（从本地数据库直读真实导出，禁止摘要冒充）
   ②路由器（关键决策+进度+待办）③重启提示语（贴进新会话即恢复）。
@@ -13,7 +14,8 @@ triggers:
   - 记录所有工作进度
   - 准备退出重启
   - 给我一个重启提示语
-  - 存档
+  - 会话存档
+  - 存档这个会话
   - save chat record
   - archive session
 ---
@@ -175,13 +177,32 @@ Agent 自带的会话搜索工具有两个坑：
 
 ## 适配其他 Agent
 
-本 skill 的机制与具体 Agent 无关，迁移时只需替换一处：
+导出机制与具体 Agent 无关，只换 Step 1 的数据源。先探测本机类型，再选脚本：
 
-- **会话数据库位置**：Hermes 是 `~/.hermes/state.db`；Claude Code、Codex 等
-  各有自己的会话存储，找到后改脚本里的 `--db` 参数或 SQL 即可
-- **没有数据库的 Agent**：退回方案 B（检索工具分页滚动），铁律不变
+| Agent | 会话存储格式 | 用哪个脚本 |
+|------|------|------|
+| Hermes | SQLite `~/.hermes/state.db` | `scripts/export_transcript.py` |
+| Claude Code | JSONL `~/.claude/projects/<目录编码>/<sessionId>.jsonl` | `scripts/export_jsonl_transcript.py --agent claude` |
+| Codex | JSONL `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | `scripts/export_jsonl_transcript.py --agent codex` |
+
+注意（2026-08-29 实测）：
+
+- Claude Code 和 Codex 都用 **JSONL 行存储**，不是 SQLite——前者按工作目录分目录存
+  sessionId.jsonl，后者按日期嵌套 rollout 文件。`export_jsonl_transcript.py` 已覆盖
+  两家的真实格式（过滤 tool_result / thinking / 工具调用 / 环境注入消息）。
+- 某家 Agent 改了存储格式导致导出报错时，用 `--inspect <文件>` 看记录类型分布，
+  自行核对提取逻辑；没有数据库也没有 JSONL 的 Agent 退回方案 B（检索工具分页滚动），
+  铁律不变。
+- 本机同时存在多家 Agent 数据时，`--agent auto` 会拒绝猜测，必须显式指定。
 
 ## 适用边界
 
 适合：多会话、多项目并行；长任务跨天推进；会话动辄几万 token 的重度用户。
 不适合：单会话就能干完的一次性问答——别为仪式感增加成本。
+
+## 版本记录
+
+- **V1.0（2026-08-29）**：首个版本化版本。新增 Claude Code / Codex 的 JSONL 导出
+  适配器（实测通过）；触发词收窄（裸"存档"不再触发，避免文件归档类请求误触发）；
+  按 dbs-skill-maker 标准补结构校验与行为验证。
+- （更早的历史改进见 git log 与「踩坑史时间线」。）

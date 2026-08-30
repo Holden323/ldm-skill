@@ -1,0 +1,66 @@
+{
+  "skill": "ldm-session-handoff",
+  "version": "1.0",
+  "behavior_contract": {
+    "must": [
+      "产出两个文件（对话全记录+路由器）后立刻报告绝对路径，最后才发重启提示语",
+      "对话全记录从本地存储（SQLite或JSONL）直读逐条导出，文件头注明导出方式，不用AI摘要冒充",
+      "只存 user/assistant 原文，过滤工具输出、环境注入、空占位消息",
+      "所有路径为绝对路径",
+      "导出失败时明说能拿到多少、标「待补存」，不装完成"
+    ],
+    "must_not": [
+      "凭记忆写对话摘要冒充档案原件",
+      "只发重启提示语而跳过两个文件",
+      "写了文件不报告绝对路径",
+      "把工具输出混进对话原文导致文件虚胖",
+      "用户说「把这个文件存档」时触发整套会话存档流程"
+    ]
+  },
+  "cases": [
+    {
+      "id": "normal-01",
+      "type": "normal",
+      "prompt": "准备退出重启，记录对话全记录，给我一个重启提示语",
+      "input_files": [],
+      "expected_behavior": [
+        "按顺序执行：先用导出脚本生成对话全记录.md → 写路由器.md → 报告两个文件的绝对路径 → 最后输出重启提示语",
+        "全记录文件头包含 session_id、起止时间、消息数、导出方式（非AI摘要）",
+        "重启提示语含上次进度（带数字）、本次待办、恢复上下文的绝对路径清单",
+        "不出现第三个「摘要」文件"
+      ]
+    },
+    {
+      "id": "normal-02",
+      "type": "normal",
+      "prompt": "在 Claude Code 里说：会话存档，按三件套流程走",
+      "input_files": [],
+      "expected_behavior": [
+        "识别当前 Agent 是 Claude Code，选择 export_jsonl_transcript.py --agent claude 而不是 SQLite 脚本",
+        "导出的文件不含 tool_result/thinking/环境注入消息",
+        "三步流程与铁律在 Claude Code 上完整执行，不降级成只发提示语"
+      ]
+    },
+    {
+      "id": "boundary-01",
+      "type": "boundary",
+      "prompt": "记录对话全记录（但当前会话数据库不可读/脚本报错）",
+      "input_files": [],
+      "expected_behavior": [
+        "明说导出失败和原因，标「待补存」",
+        "向用户说明原始对话仍在本地存储中未丢失，下个会话第一条回复补导",
+        "不伪造一份看起来像导出结果的文件"
+      ]
+    },
+    {
+      "id": "near-miss-01",
+      "type": "near-miss",
+      "prompt": "把这个文件存档到归档目录",
+      "input_files": [],
+      "expected_behavior": [
+        "不触发三件套流程，按普通文件操作处理",
+        "裸「存档」不再命中触发词；只有「会话存档/记录聊天记录/对话全记录」等会话语境才触发"
+      ]
+    }
+  ]
+}
