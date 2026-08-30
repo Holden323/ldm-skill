@@ -65,7 +65,7 @@
 
 ## 第五步：写进踩坑记录本
 
-本次扫描发现的新坑 → patch 本skill SKILL.md 的踩坑记录本章节
+本次扫描发现的新坑 → 追加到 `references/pitfalls.md`（全量案例库，顺序编号）。SKILL.md 第六章的高频铁律区只收反复出现的教训，一般新坑只进 pitfalls.md。
 
 ## 注意事项
 
