@@ -15,14 +15,14 @@ npx -y skills add Holden323/ldm-skill -g --all
 安装后你的 Agent 会自动按需加载这些 skill。也可以只装一个：
 
 ```bash
-npx -y skills add Holden323/ldm-skill --skill ai-to-human-zh -g
+npx -y skills add Holden323/ldm-skill --skill ldm-ai-to-human-zh -g
 ```
 
 ---
 
 ## 合集里有什么
 
-### 1. AI 人味儿汉译汉（ai-to-human-zh）
+### 1. AI 人味儿汉译汉（ldm-ai-to-human-zh）
 
 **把 AI 写的中文改成人话。**
 
@@ -37,9 +37,28 @@ npx -y skills add Holden323/ldm-skill --skill ai-to-human-zh -g
 
 用法：跟 Agent 说 **"帮我跑汉译汉"**，它会先出审查报告，确认后再改，输出新版本文件。
 
-详见 [skills/ai-to-human-zh](./skills/ai-to-human-zh/)。
+详见 [skills/ldm-ai-to-human-zh](./skills/ldm-ai-to-human-zh/)。
 
-### 2. AI交接班三件套（ldm-session-handoff）
+### 2. 认知资产统一治理（ldm-memory-system）
+
+**给 AI 的记忆建一套"断舍离+对账"制度。**
+
+AI 的记忆用久了会得三种病：只进不出越堆越满、指针失效没人管（记的飞书链接早改版了）、同一规则存三处互相打架。你让它"清理一下"，它可能上来就乱删——删完你再问"我的 API 配置是啥"，它俩大眼瞪小眼。
+
+这套 skill 给 Agent 一套统一四问：**住哪层？真源在哪？还准吗？有索引吗？** 每条记忆、每个文档、每个 skill 都过这四遍，该搬的搬（降级=详情搬到低层+留指针，不是删除），该删的删（必须先列三张清单给你拍板，说删才删）。
+
+| 机制 | 干什么 |
+|------|--------|
+| 四问框架 | Memory/文档/Skill/指针统一体检，不分类目一套问法 |
+| 三层架构 | Skill=操作手册、文档=项目资料库、Memory=随身小本子，各住各的层 |
+| SOT链 | 一条知识只允许一个真身，其他地方最多放指针 |
+| scan.py | 机械扫描脚本，6类确定性检查，只报告不动手 |
+
+用法：跟 Agent 说 **"清理 memory"** 或 **"memory 体检"**，它按流程出三张清单等你拍板，不会自作主张。
+
+详见 [skills/ldm-memory-system](./skills/ldm-memory-system/)。
+
+### 3. AI交接班三件套（ldm-session-handoff）
 
 **AI 没有记性，但可以交接班。**
 
@@ -70,6 +89,7 @@ npx -y skills add Holden323/ldm-skill --skill ai-to-human-zh -g
 
 ## 更新日志
 
+- **2026-08-29** — 新增 ldm-memory-system（认知资产统一治理）；README成员链接对齐改名后的目录（ldm-前缀）
 - **2026-08-26** — 仓库升级为合集 ldm-skill；新增 agent-session-handoff（AI交接班三件套）
 
 ## 许可
