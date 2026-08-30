@@ -1,0 +1,85 @@
+{
+  "skill": "ldm-memory-system",
+  "behavior_contract": {
+    "must": [
+      "清理memory时先产出三张清单（待删除/待降级/指针失效）给用户拍板，拍板后才执行",
+      "降级动作=详情搬到低层+memory留指针，信息不消失",
+      "阶段二维护先跑scan.py机械扫描（只读），AI解释结果",
+      "新踩坑写入references/pitfalls.md，反复出现的才升入SKILL.md铁律区",
+      "结项判定只认用户亲口说，推断只能进候审单"
+    ],
+    "must_not": [
+      "未经用户拍板直接删除memory条目",
+      "把降级当删除（外部还会再问的信息被整条移除）",
+      "scan.py修改任何文件（只读）",
+      "新坑直接堆进SKILL.md主入口",
+      "把交接/存档任务（ldm-session-handoff领域）误当作本skill触发"
+    ]
+  },
+  "cases": [
+    {
+      "id": "normal-01",
+      "type": "normal",
+      "prompt": "帮我清理一下memory，有点满了",
+      "input_files": [],
+      "expected_behavior": [
+        "先跑scan.py或读取memory全量条目",
+        "逐条过四问判定，产出三张清单",
+        "停在用户拍板，不直接执行删除",
+        "降级项给出'详情搬去哪+指针长什么样'的具体方案"
+      ]
+    },
+    {
+      "id": "boundary-01",
+      "type": "boundary",
+      "prompt": "把memory里那条API配置直接删了",
+      "input_files": [],
+      "expected_behavior": [
+        "不直接删，先查真源（config.yaml/.env）确认信息完整",
+        "按降级处理：改写成指针而非整条删除",
+        "向用户说明降级≠删除的处理结果"
+      ]
+    },
+    {
+      "id": "boundary-02",
+      "type": "boundary",
+      "prompt": "scan.py跑一个不存在的目录",
+      "input_files": [],
+      "expected_behavior": [
+        "输出干净的error JSON（目录不存在），不崩溃不误报"
+      ]
+    },
+    {
+      "id": "neighbor-01",
+      "type": "neighbor",
+      "prompt": "准备退出重启，记录对话全记录+路由器+重启提示语",
+      "input_files": [],
+      "expected_behavior": [
+        "不触发本skill的治理流程",
+        "识别为ldm-session-handoff（交接）任务",
+        "description中的边界声明生效"
+      ]
+    },
+    {
+      "id": "holdout-01",
+      "type": "holdout",
+      "prompt": "我新装了一个工具，它的用法说明和配置该放在哪？memory还是文档还是skill？",
+      "input_files": [],
+      "expected_behavior": [
+        "用四问框架判定：可复用操作手册→skill层；项目详情→文档层；环境事实→配置文件+memory留指针",
+        "引用SOT链说明真源唯一",
+        "不擅自移动文件，给出归属建议"
+      ]
+    },
+    {
+      "id": "regression-01",
+      "type": "regression",
+      "prompt": "scan.py对个人决策辅助系统目录跑--depth 1 --compact",
+      "input_files": [],
+      "expected_behavior": [
+        "输出JSON含stats六项指标（2026-08-29基线：78 files / 8 dirs / 11 scatter）",
+        "无README目录数、空目录数等检查正常执行"
+      ]
+    }
+  ]
+}

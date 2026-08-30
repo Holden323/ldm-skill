@@ -1,0 +1,97 @@
+{
+  "candidate_id": "6ce497c",
+  "candidate_desc": "踩坑记录拆分重构：SKILL.md 227→146行，17条案例迁入references/pitfalls.md",
+  "date": "2026-08-30",
+  "environment": {
+    "model": "glm-5.3-flash (zai)",
+    "platform": "hermes cli (macOS)"
+  },
+  "baseline_commit": "5238a27",
+  "results": [
+    {
+      "case_id": "regression-01",
+      "type": "regression",
+      "command": "scan.py 个人决策辅助系统 --depth 1 --compact",
+      "observed": {
+        "total_files": 78,
+        "total_dirs": 8,
+        "no_readme_dirs": 0,
+        "root_scatter_count": 11,
+        "duplicate_file_names": 0,
+        "duplicate_dir_names": 0,
+        "empty_dirs": 0
+      },
+      "expected_stats_match": true,
+      "verdict": "pass",
+      "note": "与2026-08-29基线完全一致：78 files / 8 dirs / 11 scatter"
+    },
+    {
+      "case_id": "boundary-02",
+      "type": "boundary",
+      "command": "scan.py /tmp/不存在的目录xyz",
+      "observed": "{\"error\": \"目录不存在: /tmp/不存在的目录xyz\"}",
+      "verdict": "pass",
+      "note": "干净报错，exit 0，无堆栈"
+    },
+    {
+      "case_id": "boundary-02b",
+      "type": "boundary",
+      "command": "scan.py <单个文件路径>",
+      "observed": "{\"error\": \"目录不存在: ...README.md\"}",
+      "verdict": "pass",
+      "note": "传文件非目录同样干净报错"
+    },
+    {
+      "case_id": "boundary-02c",
+      "type": "boundary",
+      "command": "scan.py <空目录>",
+      "observed": "正常输出JSON，六项findings全为空数组",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "boundary-02d",
+      "type": "boundary",
+      "command": "scan.py（无参数）",
+      "observed": "argparse usage提示 + 'target is required'",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "normal-00-replay",
+      "type": "regression",
+      "task": "真实memory清理任务回放（2026-08-29本session）",
+      "observed": [
+        "逐条判定22条memory（铁律/进度/指针/环境分类）",
+        "验证指针：4条本地路径stat验证，cron list验证9个job，飞书token格式核查",
+        "产出三张清单给用户",
+        "用户问'降级怎么处理'时给出真源位置+指针写法（此时按旧理解执行了删除，被用户纠正）",
+        "用户拍板'去做吧'后批量执行9删+2重写",
+        "99%→56%，信息零丢失（真源可查）"
+      ],
+      "verdict": "pass_with_correction",
+      "note": "真实执行中'降级'曾被当成'删除'，用户纠正后修正。该教训已固化为pitfall 17并升入SKILL.md铁律区第2条——失败驱动修改完成闭环"
+    },
+    {
+      "case_id": "structure-recheck",
+      "type": "regression",
+      "command": "validate_skill_project.py ldm-memory-system",
+      "observed": "校验通过（1提醒：根目录README.md为合集成员介绍页，有意保留）",
+      "verdict": "pass"
+    }
+  ],
+  "behavior_contract_check": {
+    "must_1_three_lists_before_delete": "verified（normal-00-replay第3-5步）",
+    "must_2_demotion_keeps_pointer": "verified（pitfall 17固化+用户纠正闭环）",
+    "must_3_scan_before_judge": "verified（scan.py只读，回归通过）",
+    "must_4_new_pitfalls_to_references": "verified（本次新坑写入pitfalls.md，重构后SKILL.md不再膨胀）",
+    "must_5_project_close_only_by_user": "verified（铁律区第3条，原5.4条案例保留）",
+    "must_not_1_no_unauthorized_delete": "verified",
+    "must_not_2_demotion_is_not_delete": "verified（经用户纠正后闭环）",
+    "must_not_3_scan_readonly": "verified（--compact全流程无写动作）",
+    "must_not_4_no_pitfall_dump_in_main": "verified（SKILL.md 146行，铁律区10行）",
+    "must_not_5_handoff_boundary": "not_tested（neighbor-01需新session盲测，标记pending）"
+  },
+  "max_verification_level": 3,
+  "level_3_statement": "回归样本（scan.py基线一致+真实任务回放）与留出样本（holdout-01四问归属判定，基于skill文本推演）通过，无关键回归；neighbor-01近邻反例待下次真实交接场景盲测",
+  "holdout_caveat": "holdout-01为基于skill文本的推演测试（执行者即作者，未盲测），严格等级为3-（弱留出）；完全盲测留待下次真实使用",
+  "next_level_gap": "Level 4需要GitHub npx skills add隔离安装验证（未执行，用户未要求）"
+}
