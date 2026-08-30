@@ -91,6 +91,11 @@
     "must_not_5_handoff_boundary": "not_tested（neighbor-01需新session盲测，标记pending）"
   },
   "max_verification_level": 3,
+  "non_case_checks": {
+    "structure-recheck": "validate_skill_project.py 静态校验，非行为样本，不对应 evals.json case",
+    "boundary-02b/02c/02d": "boundary-02 同一样本的三个变体输入（文件/空目录/无参数）",
+    "normal-00-replay": "真实任务回放（2026-08-29 memory清理），非 evals.json case"
+  },
   "level_3_statement": "回归样本（scan.py基线一致+真实任务回放）与留出样本（holdout-01四问归属判定，基于skill文本推演）通过，无关键回归；neighbor-01近邻反例待下次真实交接场景盲测",
   "holdout_caveat": "holdout-01为基于skill文本的推演测试（执行者即作者，未盲测），严格等级为3-（弱留出）；完全盲测留待下次真实使用",
   "next_level_gap": "Level 4需要GitHub npx skills add隔离安装验证（未执行，用户未要求）"
