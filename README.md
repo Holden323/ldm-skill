@@ -4,6 +4,8 @@
 
 支持：Hermes / Claude Code / Codex / 豆包 / WorkBuddy 等任何支持 Skills 的 Agent。
 
+简体中文 | [English](README.en.md)
+
 ---
 
 ## 一句话安装
@@ -26,7 +28,7 @@ npx -y skills add Holden323/ldm-skill --skill ldm-ai-to-human-zh -g
 
 **把 AI 写的中文改成人话。**
 
-你用 AI 写了一段中文，总觉得哪里不对——太光滑、太均匀、太"正确"，别人一眼看出是 AI 写的。这个 skill 是 14 年文字老编辑踩坑实录，9 章方法论 + Python 自动扫描脚本 + 实战改前改后对照。
+你用 AI 写了一段中文，总觉得哪里不对——太光滑、太均匀、太"正确"，别人一眼看出是 AI 写的。这个 Skill 提供精简入口、按需审稿参考和 Python 候选信号扫描脚本。
 
 | 问题 | 表现 |
 |------|------|
@@ -35,7 +37,7 @@ npx -y skills add Holden323/ldm-skill --skill ldm-ai-to-human-zh -g
 | 词汇书面 | "此外""事实上""值得注意的是"扎堆 |
 | 内容光滑 | 没有毛边，没有任何一处是作者自己也没想通的 |
 
-用法：跟 Agent 说 **"帮我跑汉译汉"**，它会先出审查报告，确认后再改，输出新版本文件。
+用法：跟 Agent 说“检查这篇稿子的 AI 痕迹”或“把这段改得像人话”。直接要求改写时会直接完成；处理文件且未指定覆盖时，默认输出下一个版本。
 
 详见 [skills/ldm-ai-to-human-zh](./skills/ldm-ai-to-human-zh/)。
 
@@ -45,7 +47,7 @@ npx -y skills add Holden323/ldm-skill --skill ldm-ai-to-human-zh -g
 
 AI 的记忆用久了会得三种病：只进不出越堆越满、指针失效没人管（记的飞书链接早改版了）、同一规则存三处互相打架。你让它"清理一下"，它可能上来就乱删——删完你再问"我的 API 配置是啥"，它俩大眼瞪小眼。
 
-这套 skill 给 Agent 一套统一四问：**住哪层？真源在哪？还准吗？有索引吗？** 每条记忆、每个文档、每个 skill 都过这四遍，该搬的搬（降级=详情搬到低层+留指针，不是删除），该删的删（必须先列三张清单给你拍板，说删才删）。
+这套 Skill 给 Agent 一套统一四问：**住哪层？真源在哪？还准吗？有索引吗？** 每条记忆、每个文档、每个 Skill 都按任务范围检查；该搬的搬（降级=详情搬到低层+留指针），该删的删（范围不明时先列清单确认）。
 
 | 机制 | 干什么 |
 |------|--------|
@@ -54,7 +56,7 @@ AI 的记忆用久了会得三种病：只进不出越堆越满、指针失效�
 | SOT链 | 一条知识只允许一个真身，其他地方最多放指针 |
 | scan.py | 机械扫描脚本，6类确定性检查，只报告不动手 |
 
-用法：跟 Agent 说 **"清理 memory"** 或 **"memory 体检"**，它按流程出三张清单等你拍板，不会自作主张。
+用法：跟 Agent 说 **"清理 memory"** 或 **"memory 体检"**，它会按范围检查并给出处置建议；批量范围不明时先列清单确认。
 
 详见 [skills/ldm-memory-system](./skills/ldm-memory-system/)。
 
@@ -79,16 +81,30 @@ AI 的记忆用久了会得三种病：只进不出越堆越满、指针失效�
 
 详见 [skills/ldm-session-handoff](./skills/ldm-session-handoff/)。
 
+### 4. 个人实证追踪（ldm-empirical-life-tracker）
+
+把重要想法、预测、决策和结果连接成可追溯的个人证据，支持记录、回填、复盘和低风险个人实验。它区分事实、体验、解释与假设，不从少量记录推断稳定人格，也不会在未获授权时扫描或写入私人数据。
+
+详见 [skills/ldm-empirical-life-tracker](./skills/ldm-empirical-life-tracker/)。
+
+### 5. 夹叙夹议写作（ldm-narrative-commentary-writing）
+
+把已经确定的事件型或观点型选题写成事实可靠、叙议交替、普通读者容易理解的中文长文。支持直接成稿、结构设计和审稿，并按任务需要加载事实核查、六拍节奏、文风与可读性参考。
+
+详见 [skills/ldm-narrative-commentary-writing](./skills/ldm-narrative-commentary-writing/)。
+
 ---
 
 ## 设计原则
 
 1. **只收脱敏后的通用方法论。** 项目相关的私有 skill 不进合集。
 2. **每个 skill 必须在作者自己的日常工作中真实用过。** 没跑过的不上架。
-3. **机制优先于工具。** skill 里写清楚"为什么这么做"，换一个 Agent 也能照着迁移。
+3. **机制优先于工具。** Skill 里写清楚“为什么这么做”，换一个 Agent 也能照着迁移。
+4. **入口轻、细节分层。** 每个 Skill 的 SKILL.md 只保留触发、决策和资源路由，长案例与平台细节按需读取。
 
 ## 更新日志
 
+- **2026-09-07** — 纳入 ldm-empirical-life-tracker 与 ldm-narrative-commentary-writing；统一多 Agent 真源
 - **2026-08-29** — 新增 ldm-memory-system（认知资产统一治理）；README成员链接对齐改名后的目录（ldm-前缀）
 - **2026-08-26** — 仓库升级为合集 ldm-skill；新增 agent-session-handoff（AI交接班三件套）
 
