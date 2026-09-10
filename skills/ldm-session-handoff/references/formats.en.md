@@ -55,7 +55,7 @@ The router is the primary carrier of resume context; the restart prompt is only 
 
 ## Resource Versions
 
-> Only dependencies that would cause wrong work if the next session guessed wrong; write "none" if there are none.
+> Only write things where using the wrong version would make the next session do the work wrong. Undecided states and not-yet-done items belong in the to-do or next-step sections, not here. Write "none" if there is nothing.
 
 - <skill / asset library / template / tool>: <version or snapshot id> (<currently in effect / superseded by which version>)
 

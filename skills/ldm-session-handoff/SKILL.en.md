@@ -47,7 +47,7 @@ The router is the primary carrier of resume context, and the restart prompt is o
 - Key decisions and their rationale.
 - Checkpoints: completed and confirmed milestones with evidence, in chronological order, so the next session sees at a glance how far things got.
 - Absolute paths and status of completed deliverables.
-- Resource versions: dependencies and their versions where guessing wrong would cause wrong work (skills, asset libraries, templates, tools).
+- Resource versions: only dependencies and versions where using the wrong one would make the next session do the work wrong (skills, asset libraries, templates, tools). Undecided states and not-yet-done items go in the to-do or next-step sections instead.
 - Work in progress, the next step, and its preconditions (what must be in place or confirmed before starting).
 - Unresolved issues and explicit to-dos.
 - Only newly emerged and reusable lessons from this session.
