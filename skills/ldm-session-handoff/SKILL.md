@@ -80,3 +80,19 @@ description: >
 - ✅ `/Users/likai/Documents/Hermes_Workspace/...`
 
 所有文件路径一律用 `/Users/likai/` 开头。包括重启提示语、路由器产出清单、用户给的指引。用户已多次纠正此问题。
+
+### 3. 导出全记录不要按 `active = 1` 过滤（2026-09-11 实战教训）
+
+上下文压缩会把已压缩的老消息标成 `active = 0`，但那些**仍是被压缩前的真实原文**，全记录必须保留。按 `active = 1` 过滤会把长会话导成十分之一（实测某会话只导出 34 条，实际原文 162 条）——丢掉的正好是最早、最需要回查的那部分。
+
+只排除 `_compressed_summary = 1` 的行：那是压缩生成给模型看的 AI 摘要，不是原文。`export_transcript.py` 已修（commit 5844ac6）；确需只看当前活跃上下文时用 `--active-only`。
+
+导出后必须核对条数：文件头写的消息数应与「用户条数 + 助手条数」一致，并与库里的实际条数量级相符。
+
+### 4. 本 skill 是软链，`skill_manage` 改不动（2026-09-11 实战教训）
+
+`skill_manage` 会报 `not found in active profile`，因为真源在 ldm-skill 仓库里。改这个 skill 直接用 `patch` 工具改真源路径：
+
+`/Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/ldm-session-handoff/SKILL.md`
+
+改完从软链路径（`/Users/likai/.hermes/skills/ldm-session-handoff/SKILL.md`）读回验证。
