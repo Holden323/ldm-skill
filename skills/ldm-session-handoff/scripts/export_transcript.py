@@ -86,7 +86,7 @@ def list_sessions(conn: sqlite3.Connection, date_str=None, source=None, limit=10
 
 
 def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
-                   max_chars=TRUNCATE_LIMIT):
+                   max_chars=TRUNCATE_LIMIT, active_only=False):
     cur = conn.cursor()
     # 会话元信息
     cur.execute("SELECT started_at, ended_at FROM sessions WHERE id = ?", (session_id,))
@@ -94,16 +94,29 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
     if not meta:
         sys.exit(f"[错误] 找不到 session: {session_id}（先用 --list 确认 id）")
 
-    # 真实消息：只取 user/assistant、active=1，按 id 升序
+    # 真实消息：user/assistant 全部原文，按 id 升序
+    #
+    # 不要用 active = 1 过滤：上下文压缩会把已压缩的老消息标成 active = 0，
+    # 但那些仍是被压缩前的真实原文，全记录必须保留。
+    # （2026-09-11 实战教训：某会话按 active=1 只导出 34 条，实际原文 159 条。）
+    # 只排除 _compressed_summary = 1 的行——那是压缩生成给模型看的 AI 摘要，不是原文。
+    base_sql = ("SELECT role, content, timestamp FROM messages "
+                "WHERE session_id = ? AND role IN ('user','assistant') ")
+    if active_only:
+        base_sql += "AND active = 1 "
     try:
-        cur.execute(
-            "SELECT role, content, timestamp FROM messages "
-            "WHERE session_id = ? AND role IN ('user','assistant') AND active = 1 "
-            "ORDER BY id ASC",
-            (session_id,),
-        )
-    except sqlite3.OperationalError as e:
-        sys.exit(f"[错误] 查询失败（检查 messages 表是否有 active 列）: {e}")
+        cur.execute(base_sql + "AND COALESCE(_compressed_summary, 0) = 0 ORDER BY id ASC",
+                    (session_id,))
+    except sqlite3.OperationalError:
+        # 老库可能没有 _compressed_summary / active 列，退回最小过滤（尽力而为）
+        try:
+            cur.execute(
+                "SELECT role, content, timestamp FROM messages "
+                "WHERE session_id = ? AND role IN ('user','assistant') ORDER BY id ASC",
+                (session_id,),
+            )
+        except sqlite3.OperationalError as e:
+            sys.exit(f"[错误] 查询失败（检查 messages 表结构）: {e}")
 
     rows = cur.fetchall()
     if not rows:
@@ -121,27 +134,32 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
         sys.exit("[错误] 该会话没有可导出的非空 user/assistant 消息")
     rows = filtered
 
-    lines = [
-        "# 对话全记录",
-        "",
-        f"> session_id: {session_id}",
-        f"> 起止时间: {fmt_ts(meta[0])} ~ {fmt_ts(meta[1]) if meta[1] else '进行中'}",
-        f"> 消息数: {len(rows)} 条（仅 user/assistant 非空消息，已过滤工具输出、空占位与已删除消息）",
-        f"> 导出时间: {fmt_ts(datetime.datetime.now().timestamp())}",
-        f"> 导出方式: SQLite 直读逐条导出，非AI摘要",
-        "",
-    ]
     label = {"user": "用户", "assistant": "助手"}
     truncated_n = 0
+    body_lines = []
     for i, (role, content, ts) in enumerate(rows, 1):
         text = content or ""
         if max_chars and len(text) > max_chars:
             text = text[:max_chars] + "\n[已截断]"
             truncated_n += 1
         head = f"## {label.get(role, role)}（第{i}条 · {fmt_ts(ts)}）"
-        lines += [head, "", text.strip(), ""]
+        body_lines += [head, "", text.strip(), ""]
     if truncated_n:
-        lines.append(f"---\n注：{truncated_n} 条消息超长已截断至前 {max_chars} 字。原始内容仍在数据库中，未丢失。")
+        body_lines.append(f"---\n注：{truncated_n} 条消息超长已截断至前 {max_chars} 字。原始内容仍在数据库中，未丢失。")
+
+    trunc_note = (f"{truncated_n} 条超长已截断（单条上限 {max_chars} 字符）"
+                  if truncated_n else "无")
+    lines = [
+        "# 对话全记录",
+        "",
+        f"> session_id: {session_id}",
+        f"> 起止时间: {fmt_ts(meta[0])} ~ {fmt_ts(meta[1]) if meta[1] else '进行中'}",
+        f"> 消息数: {len(rows)} 条（user/assistant 非空原文；已过滤工具输出、空占位、压缩摘要行）",
+        f"> 导出时间: {fmt_ts(datetime.datetime.now().timestamp())}",
+        f"> 导出方式: SQLite 直读逐条导出，非AI摘要",
+        f"> 截断: {trunc_note}",
+        "",
+    ] + body_lines
 
     out = os.path.expanduser(out_path)
     with open(out, "w", encoding="utf-8") as f:
@@ -161,6 +179,8 @@ def main():
     ap.add_argument("-o", "--output", help="输出 markdown 路径")
     ap.add_argument("--max-chars", type=int, default=TRUNCATE_LIMIT,
                     help="单条消息截断阈值；默认0表示不截断")
+    ap.add_argument("--active-only", action="store_true",
+                    help="只导出当前活跃上下文（旧行为）；默认导出全部原文，含被上下文压缩的老消息")
     args = ap.parse_args()
 
     conn = open_db(args.db)
@@ -169,7 +189,7 @@ def main():
             list_sessions(conn, args.date, args.source, args.limit)
         elif args.session:
             out = args.output or f"./对话全记录_{args.session[:12]}.md"
-            export_session(conn, args.session, out, args.max_chars)
+            export_session(conn, args.session, out, args.max_chars, args.active_only)
         else:
             sys.exit("[错误] 导出需要 --session <id> 和 -o 输出路径")
     finally:
