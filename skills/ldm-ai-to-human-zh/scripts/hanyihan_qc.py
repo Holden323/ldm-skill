@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-汉译汉通用质检脚本
+汉译汉机械信号扫描器
 用法：python3 hanyihan_qc.py <文章路径>
 示例：python3 hanyihan_qc.py /path/to/article.md
 
-检查项（全部来自 ai-to-human-zh SKILL.md）：
+检查项用于发现候选信号，不能脱离体裁和语境判定文章质量：
   1. 禁令句式（不是X而是Y、你以为X其实Y等）
   2. AI高频词 / 广告腔 / 学术报告腔
   3. 破折号
@@ -212,12 +212,11 @@ def check_short_sentence_stacking(body):
 def check_precise_numbers(body):
     """伪装精确数字检查（1.7秒、2.3%等）"""
     issues = []
-    matches = re.findall(r'\d+\.\d+\s*(秒|分钟|小时|天|%|倍|次|个|元|块)', body)
-    for m in matches:
-        for i, line in enumerate(body.split('\n')):
-            if m in line:
-                issues.append(f"  行{i+1}: ...{m}... → 真的量过吗？用嘴上会说的词")
-                break
+    pattern = re.compile(r'\d+\.\d+\s*(?:秒|分钟|小时|天|%|倍|次|个|元|块)')
+    for i, line in enumerate(body.split('\n')):
+        for match in pattern.finditer(line):
+            issues.append(
+                f"  行{i+1}: 「{match.group(0)}」→ 确认精度是否有来源或真实观察")
     return issues
 
 
@@ -241,7 +240,7 @@ def main():
     filename = os.path.basename(path)
 
     print(f"{'='*60}")
-    print(f"汉译汉质检报告")
+    print(f"汉译汉机械信号报告")
     print(f"文件: {filename}")
     print(f"中文字数: {cc}")
     print(f"{'='*60}")
@@ -253,7 +252,7 @@ def main():
     issues = check_forbidden_patterns(body)
     if issues:
         for i in issues: print(i)
-        print(f"  → {len(issues)}处，必须修复")
+        print(f"  → {len(issues)}处候选，结合语境判断")
         total += len(issues)
     else:
         print(f"  ✓ 通过")
@@ -263,7 +262,7 @@ def main():
     issues = check_ai_words(body)
     if issues:
         for i in issues: print(i)
-        print(f"  → {len(issues)}处，必须替换")
+        print(f"  → {len(issues)}处候选，结合体裁判断")
         total += len(issues)
     else:
         print(f"  ✓ 通过")
@@ -273,7 +272,7 @@ def main():
     issues = check_dashes(body)
     if issues:
         for i in issues: print(i)
-        print(f"  → {len(issues)}处，必须替换")
+        print(f"  → {len(issues)}处候选，检查是否影响节奏")
         total += len(issues)
     else:
         print(f"  ✓ 通过")
@@ -283,17 +282,17 @@ def main():
     issues = check_english_words(body)
     if issues:
         for i in issues: print(i)
-        print(f"  → {len(issues)}处，必须翻译")
+        print(f"  → {len(issues)}处候选，专业词和专有名词可保留")
         total += len(issues)
     else:
         print(f"  ✓ 通过")
 
     # 5. 段落长度
     print(f"\n【5】段落长度（每段>3句）")
-    issues = check_paragraph_length(body)
+    issues = check_paragraph_length(content)
     if issues:
         for i in issues: print(i)
-        print(f"  → {len(issues)}处超长段落")
+        print(f"  → {len(issues)}处较长段落，按发布体裁判断")
         total += len(issues)
     else:
         print(f"  ✓ 通过")
@@ -338,9 +337,9 @@ def main():
     # 总结
     print(f"\n{'='*60}")
     if total == 0:
-        print(f"✅ 全部通过，0处硬性问题")
+        print(f"未发现预设机械信号")
     else:
-        print(f"❌ {total}处硬性问题 + 警告项，修复后再发布")
+        print(f"发现 {total} 处候选信号；请结合体裁和上下文人工判断")
     print(f"{'='*60}")
 
 
