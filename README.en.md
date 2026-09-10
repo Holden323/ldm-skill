@@ -71,10 +71,10 @@ This workflow builds a handoff protocol for your Agent. Each session ending prod
 | Artifact | Purpose | Audience |
 |----------|---------|----------|
 | ① Full transcript | Raw conversation exported message by message from the local database (with export script). Traceable and auditable. | Human (archive original) |
-| ② Router | Key decisions, deliverables, current progress, and to-dos — one page to see everything | Human and AI (navigation map) |
-| ③ Restart prompt | A block of text you paste into a new session to restore full context | AI (handoff brief) |
+| ② Router | Key decisions, checkpoints, deliverables, resource versions, next step and preconditions — one page. This is what resume depends on | Human and AI (navigation map) |
+| ③ Restart prompt | A block of text you paste into a new session so it finds the router and knows the constraints | AI (handoff brief) |
 
-There is one core principle: **restoring context requires the original record, not a retelling.** The transcript must be read directly from the database — summaries are never acceptable substitutes.
+There is one core principle: **restoring context requires the original record, not a retelling.** The transcript must be read directly from the database — summaries are never acceptable substitutes. Roles are split: the transcript is for auditing, the router is for resuming, and the prompt is only an entry point.
 
 Usage: tell your Agent **"prepare to exit and restart, export the full transcript,"** or run the script directly:
 `python3 skills/ldm-session-handoff/scripts/export_transcript.py --list`
@@ -104,6 +104,7 @@ See [skills/ldm-narrative-commentary-writing](./skills/ldm-narrative-commentary-
 
 ## Changelog
 
+- **2026-09-10** — ldm-session-handoff router revised: added checkpoints, resource versions, and next-step preconditions; the restart prompt is now explicitly an entry point, with the router carrying resume
 - **2026-09-07** — Added ldm-empirical-life-tracker and ldm-narrative-commentary-writing; unified multi-Agent source of truth
 - **2026-08-29** — Added ldm-memory-system (cognitive asset governance); README links aligned with renamed directories (ldm- prefix)
 - **2026-08-26** — Repository upgraded to collection ldm-skill; added ldm-session-handoff (session handoff)

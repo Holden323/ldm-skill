@@ -32,11 +32,14 @@ import json
 import os
 import sys
 
-TRUNCATE_LIMIT = 3000
+TRUNCATE_LIMIT = 0
 
 # 过滤：这些开头的 user 消息是环境注入，不是用户说的话
 CODEX_INJECT_PREFIXES = ("<recommended_plugins>", "<app-context>", "<user_instructions>",
-                         "<environment_context>", "# Files mentioned by the user:")
+                         "<environment_context>", "<skills_instructions>",
+                         "<permissions instructions>", "<collaboration_mode>",
+                         "<apps_instructions>", "<plugins_instructions>",
+                         "# AGENTS.md instructions", "# Files mentioned by the user:")
 CLAUDE_TOOL_RESULT = "tool_result"
 
 
@@ -66,7 +69,7 @@ def read_jsonl(path):
 
 
 def truncate(text, max_chars, stats):
-    if len(text) > max_chars:
+    if max_chars and len(text) > max_chars:
         stats["truncated"] += 1
         return text[:max_chars] + "\n[已截断]"
     return text
@@ -250,7 +253,8 @@ def main():
     ap.add_argument("--limit", type=int, default=10)
     ap.add_argument("--session", help="claude=sessionId / codex=rollout文件路径或片段")
     ap.add_argument("-o", "--output", help="输出 markdown 路径")
-    ap.add_argument("--max-chars", type=int, default=TRUNCATE_LIMIT)
+    ap.add_argument("--max-chars", type=int, default=TRUNCATE_LIMIT,
+                    help="单条消息截断阈值；默认0表示不截断")
     ap.add_argument("--inspect", metavar="FILE",
                     help="打印某 jsonl 的 type 分布（调试格式变化用）")
     args = ap.parse_args()
@@ -286,6 +290,9 @@ def main():
         else:
             codex_list(args.date, args.limit)
         return
+
+    if not args.session:
+        sys.exit("[错误] 导出需要 --session <id>；-o 只能指定输出路径")
 
     if agent == "claude":
         path = claude_export(args.session, args.max_chars, stats)

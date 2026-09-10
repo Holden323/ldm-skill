@@ -42,11 +42,13 @@ Formats are defined in [references/formats.md](references/formats.md). Load [ref
 
 ## Router
 
-The router is a navigation aid, not a conversation replay. At minimum it must cover:
+The router is the primary carrier of resume context, and the restart prompt is only an entry point: the transcript is for auditing, the router is for resuming. It is a navigation aid, not a conversation replay. At minimum it must cover:
 
 - Key decisions and their rationale.
+- Checkpoints: completed and confirmed milestones with evidence, in chronological order, so the next session sees at a glance how far things got.
 - Absolute paths and status of completed deliverables.
-- Work in progress: where it stands and what comes next.
+- Resource versions: dependencies and their versions where guessing wrong would cause wrong work (skills, asset libraries, templates, tools).
+- Work in progress, the next step, and its preconditions (what must be in place or confirmed before starting).
 - Unresolved issues and explicit to-dos.
 - Only newly emerged and reusable lessons from this session.
 

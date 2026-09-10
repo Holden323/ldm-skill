@@ -34,7 +34,7 @@ import sqlite3
 import sys
 
 DEFAULT_DB = "~/.hermes/state.db"
-TRUNCATE_LIMIT = 3000
+TRUNCATE_LIMIT = 0
 
 
 def open_db(db_path: str) -> sqlite3.Connection:
@@ -135,7 +135,7 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
     truncated_n = 0
     for i, (role, content, ts) in enumerate(rows, 1):
         text = content or ""
-        if len(text) > max_chars:
+        if max_chars and len(text) > max_chars:
             text = text[:max_chars] + "\n[已截断]"
             truncated_n += 1
         head = f"## {label.get(role, role)}（第{i}条 · {fmt_ts(ts)}）"
@@ -160,7 +160,7 @@ def main():
     ap.add_argument("--session", help="要导出的 session_id")
     ap.add_argument("-o", "--output", help="输出 markdown 路径")
     ap.add_argument("--max-chars", type=int, default=TRUNCATE_LIMIT,
-                    help=f"单条消息截断阈值（默认{TRUNCATE_LIMIT}字）")
+                    help="单条消息截断阈值；默认0表示不截断")
     args = ap.parse_args()
 
     conn = open_db(args.db)

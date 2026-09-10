@@ -30,6 +30,8 @@ Body alternates between `## User` and `## Assistant` sections. Do not mix in too
 
 ## Router
 
+The router is the primary carrier of resume context; the restart prompt is only an entry point. The transcript is for auditing, the router is for resuming.
+
 ```markdown
 # <date> <topic> — Router
 
@@ -40,14 +42,28 @@ Body alternates between `## User` and `## Assistant` sections. Do not mix in too
 
 - <decision, rationale, boundaries that still apply>
 
+## Checkpoints
+
+> In chronological order. Only completed and confirmed milestones; anything unverified does not count.
+
+1. <milestone> — Evidence: <absolute path / link / verification result>
+
 ## Deliverables
 
 | Artifact | Absolute path or final link | Status |
 |---|---|---|
 
-## Current Progress
+## Resource Versions
 
-<what is being done, where it stands, what comes next>
+> Only dependencies that would cause wrong work if the next session guessed wrong; write "none" if there are none.
+
+- <skill / asset library / template / tool>: <version or snapshot id> (<currently in effect / superseded by which version>)
+
+## Current Progress and Next Step
+
+- In progress: <started but unfinished; write "none" if nothing>
+- Next step: <the concrete next action and completion criteria>
+- Preconditions: <what must be in place or confirmed before starting; write "none" if nothing>
 
 ## To-Do
 
@@ -69,7 +85,7 @@ Last session completed:
 Next steps:
 - <next action and completion criteria>
 
-Read these files to restore context:
+Read these files to restore context (progress, resource versions, and preconditions live in the router):
 - <router absolute path>
 - <additional originals or key deliverables absolute paths, if needed>
 
@@ -77,4 +93,4 @@ Constraints:
 - <key restrictions that still apply>
 ```
 
-The prompt should let the next session find key files without re-searching, but do not paste the entire router into it.
+The prompt is an entry point, not the carrier: it should let the next session find the router without re-searching, but do not paste the entire router into it.
