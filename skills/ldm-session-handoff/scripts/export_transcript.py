@@ -30,6 +30,7 @@ export_transcript.py — AI交接班 Step 1：对话全记录导出脚本
 import argparse
 import datetime
 import os
+import re
 import sqlite3
 import sys
 
@@ -85,6 +86,25 @@ def list_sessions(conn: sqlite3.Connection, date_str=None, source=None, limit=10
         print(f"{sid:<24} {fmt_ts(st):<20} {src or '-':<8} {mc or 0:>4}  {t}")
 
 
+# 比较用归一：剥掉模型切换/压缩加的 [Note: ...] / [CONTEXT COMPACTION ...] 前缀注释，
+# 再折叠空白。只用于重复判定，输出仍保留首次出现的原文。
+_NOTE_PREFIXES = ("[Note: model was just switched", "[CONTEXT COMPACTION")
+
+
+def _norm_key(s: str) -> str:
+    s = (s or "").strip()
+    changed = True
+    while changed:
+        changed = False
+        for pref in _NOTE_PREFIXES:
+            if s.startswith(pref):
+                end = s.find("]")
+                if end != -1:
+                    s = s[end + 1:].strip()
+                    changed = True
+    return re.sub(r"\s+", " ", s)
+
+
 def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
                    max_chars=TRUNCATE_LIMIT, active_only=False):
     cur = conn.cursor()
@@ -132,7 +152,54 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
         filtered.append((role, content, ts))
     if not filtered:
         sys.exit("[错误] 该会话没有可导出的非空 user/assistant 消息")
-    rows = filtered
+
+    # 重复治理（2026-09-11 实战：上下文重建把历史整块重复入库，库内 284 条实为 176 条）：
+    # 1) 块重放：连续 >= REPLAY_MIN 条与此前某段同序同文（按 _norm_key 比较，
+    #    兼容 [Note: ...] 前缀变体）→ 判为上下文重建的重放，整块跳过；
+    # 2) 助手长文（归一后 >= 80 字）norm 相同只保留首次——助手消息不会合法地逐字重复；
+    # 3) 用户消息不做全局去重：连发"1"、"好"是真实对话，宁可留。
+    REPLAY_MIN = 3
+    ASSIST_DUP_MIN_CHARS = 80
+    norms = [_norm_key(c) for (_r, c, _t) in filtered]
+    seen_assist = set()
+    kept = []        # (role, content, ts)
+    kept_norms = []  # 与 kept 对齐
+    skipped_replay = 0
+    skipped_dup = 0
+    i = 0
+    while i < len(filtered):
+        role, content, ts = filtered[i]
+        n = norms[i]
+        if role == "assistant" and len(n) >= ASSIST_DUP_MIN_CHARS and n in seen_assist:
+            skipped_dup += 1
+            i += 1
+            continue
+        best = 0
+        for j in range(len(kept)):
+            if kept[j][0] != role or kept_norms[j] != n:
+                continue
+            k = 0
+            while (j + k < len(kept) and i + k < len(filtered)
+                   and kept[j + k][0] == filtered[i + k][0]
+                   and kept_norms[j + k] == norms[i + k]):
+                k += 1
+            if k > best:
+                best = k
+        if best >= REPLAY_MIN:
+            for kk in range(best):
+                rr, _cc, _tt = filtered[i + kk]
+                nn = norms[i + kk]
+                if rr == "assistant" and len(nn) >= ASSIST_DUP_MIN_CHARS:
+                    seen_assist.add(nn)
+            i += best
+            skipped_replay += best
+            continue
+        kept.append((role, content, ts))
+        kept_norms.append(n)
+        if role == "assistant" and len(n) >= ASSIST_DUP_MIN_CHARS:
+            seen_assist.add(n)
+        i += 1
+    rows = kept
 
     label = {"user": "用户", "assistant": "助手"}
     truncated_n = 0
@@ -154,7 +221,8 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
         "",
         f"> session_id: {session_id}",
         f"> 起止时间: {fmt_ts(meta[0])} ~ {fmt_ts(meta[1]) if meta[1] else '进行中'}",
-        f"> 消息数: {len(rows)} 条（user/assistant 非空原文；已过滤工具输出、空占位、压缩摘要行）",
+        f"> 消息数: {len(rows)} 条（user/assistant 非空原文，去重后；已过滤工具输出、空占位、压缩摘要行）",
+        f"> 去重: 排除块重放 {skipped_replay} 条（上下文重建整块重插历史）+ 助手重复长文 {skipped_dup} 条；用户消息不做全局去重",
         f"> 导出时间: {fmt_ts(datetime.datetime.now().timestamp())}",
         f"> 导出方式: SQLite 直读逐条导出，非AI摘要",
         f"> 截断: {trunc_note}",
@@ -165,7 +233,7 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     size_kb = os.path.getsize(out) / 1024
-    print(f"[完成] 导出 {len(rows)} 条消息 → {out}（{size_kb:.1f} KB，截断 {truncated_n} 条）")
+    print(f"[完成] 导出 {len(rows)} 条消息（排除块重放 {skipped_replay} 条、助手重复长文 {skipped_dup} 条） → {out}（{size_kb:.1f} KB，截断 {truncated_n} 条）")
 
 
 def main():
