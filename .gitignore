@@ -25,4 +25,6 @@ tracker-data/
 skills/ldm-empirical-life-tracker/evals/results/
 
 # 未打磨完成，暂不上传（用户 2026-09-11 决定）
+# 发布红线：远端只发 ldm-ai-to-human-zh / ldm-memory-system / ldm-session-handoff 三个
 skills/ldm-narrative-commentary-writing/
+skills/ldm-empirical-life-tracker/
