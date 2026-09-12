@@ -19,3 +19,10 @@ venv/
 # Temp
 *.tmp
 *.bak
+
+# Local personal data and evaluation output
+tracker-data/
+skills/ldm-empirical-life-tracker/evals/results/
+
+# 未打磨完成，暂不上传（用户 2026-09-11 决定）
+skills/ldm-narrative-commentary-writing/
