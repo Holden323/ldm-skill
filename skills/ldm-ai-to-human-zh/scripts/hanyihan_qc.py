@@ -32,7 +32,8 @@ def load_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
     lines = content.split('\n')
-    body_lines = [l for l in lines if not l.startswith('# ') and l.strip()]
+    # 2026-09-16 修复：保留空行，否则依赖 \n\n 分段的段落检查全部失效
+    body_lines = [l for l in lines if not l.startswith('# ')]
     body = '\n'.join(body_lines)
     return content, body, lines
 
@@ -58,13 +59,27 @@ def check_forbidden_patterns(body):
         # 变体：句号断开的禁令
         (r'不是[^。]+。恰恰相反[，]?', '不是X。恰恰相反Y'),
         (r'你以为[^。]+。其实[^。]*', '你以为X。其实Y'),
+        # 2026-09-18 新增：空转评点（阈值4，短句也算）
+        (r'(?:这话|这句话|那话)(?:说|讲)得[^。！？]{0,8}', '空转评点（这话说得挺X）', 4),
+        (r'(?<!这话)(?<!句话)(?<!那话)说得(?:挺|很|真)?(?:扎心|到位|狠|准)', '空转评点（说得挺扎心/到位）', 4),
+        # 2026-09-18 新增：回指过渡 / 假迟钝（阈值4）
+        (r'说回[^。！？]{0,12}', '回指过渡（说回X）', 4),
+        (r'(?:琢磨|想|研究)了(?:一阵|半天|好久|很久)[^。！？]{0,12}(?:发现|明白|意识到|回过味|看懂)', '假迟钝（琢磨了一阵才发现）', 4),
+        # 2026-09-18 新增：指代待核（回指省略了名词时提醒）
+        (r'[这那](?:两|几)样', '回指待核（这两样/这几样）', 4),
+        # 2026-09-19 新增：假装震惊（替作者编情绪反应，阈值3，短句也算）
+        (r'(?:我|咱)[^，。！？]{0,8}(?:坐不住|震惊|震撼|震住|惊呆|惊到|惊了|看呆|看傻|看愣|看懵|傻眼|懵了|懵圈|愣住|破防|绷不住|麻了)', '假装震惊（我坐不住/我震惊了）', 3),
+        (r'(?:我|咱)[^，。！？]{0,8}(?:头皮发麻|倒吸一口凉气|(?:后背|背后)(?:一凉|发凉)|血压(?:拉满|上来)|心跳(?:加速|漏)|直呼好家伙|惊掉下巴)', '假装震惊（我坐不住/我震惊了）', 3),
+        # 2026-09-21 新增：自问自答（阈值4）
+        (r'(?:这|那|到底)(?:是|是什么|什么意思|意味着什么|怎么回事|为什么|怎么理解)[？?]', '自问自答（这个说法到底什么意思？）', 4),
     ]
     for i, line in enumerate(body.split('\n')):
         l = line.strip()
         if not l or l.startswith('#'):
             continue
-        for pat, name in patterns:
-            if re.search(pat, l) and count_chinese(l) > 10:
+        for pat, name, *extra in patterns:
+            thr = extra[0] if extra else 10
+            if re.search(pat, l) and count_chinese(l) > thr:
                 issues.append(f"  行{i+1} [{name}]: {l[:60]}")
     return issues
 
@@ -107,7 +122,13 @@ def check_dashes(body):
 def check_english_words(body):
     """英文词检查"""
     issues = []
-    allowed = {'ok', 'vs', 'ai', 'app', 'pdf', 'csv', 'xlsx', 'md', 'py', 'sh', 'mb', 'gb'}
+    # 2026-09-18 口径：品牌名、网络常用语不翻译（Google、pass 等）；只译生僻装腔的英文词
+    allowed = {
+        'ok', 'vs', 'ai', 'app', 'pdf', 'csv', 'xlsx', 'md', 'py', 'sh', 'mb', 'gb',
+        'google', 'github', 'chatgpt', 'gpt', 'claude', 'deepseek', 'openai', 'kimi', 'sora',
+        'comfyui', 'iphone', 'android', 'mac', 'windows',
+        'pass', 'bug', 'get', 'pua', 'emo', 'yyds', 'pk', 'solo',
+    }
     for i, line in enumerate(body.split('\n')):
         l = line.strip()
         if l.startswith('#') or l.startswith('```') or 'http' in l:
