@@ -28,3 +28,10 @@ skills/ldm-empirical-life-tracker/evals/results/
 # 发布红线：远端只发 ldm-ai-to-human-zh / ldm-memory-system / ldm-session-handoff 三个
 skills/ldm-narrative-commentary-writing/
 skills/ldm-empirical-life-tracker/
+
+# 仍在打磨，禁止上传（用户 2026-09-24 要求）
+skills/ganhuo-skill/
+skills/ldm-problem-solver/
+
+# 以上 4 个被排除的 Skill，版本由本机仓库 /Users/likai/Documents/Claude_Workspace/_外部真源快照 的
+# ldm-skill未上传/ 每天自动快照保护（2026-10-28 起）。这里再排除新的 Skill 时，要同步加进该仓库 快照.sh 的 SOURCES。
