@@ -34,7 +34,7 @@ When rewriting, prioritize:
 - **Jargon and boilerplate:** Use simple, precise language instead of presentation-speak, report-speak, or ad-speak.
 - **Over-explanation:** When a point or story already lands, cut the redundant summary and forced epiphany.
 
-These are contextual signals, not global banned words. Dashes, parallelism, three-part structures, technical terms, and contrasts can be preserved when the genre calls for them. Do not add grammatical errors, digressions, unverified details, or emotional outbursts just to "sound human."
+These are contextual signals, not global banned words. Parallelism, three-part structures, technical terms, and contrasts can be preserved when the genre calls for them; em dashes and "not A, but B" are the exception, see the hard bans below. Do not add grammatical errors, digressions, unverified details, or emotional outbursts just to "sound human."
 
 ## Authenticity boundaries
 
@@ -42,6 +42,16 @@ These are contextual signals, not global banned words. Dashes, parallelism, thre
 - When the original contains suspicious facts, flag them or rewrite conservatively; do not fabricate sources during polishing.
 - Fictional settings must retain their fictional nature and must not be disguised as facts.
 - Preserve the author's core position, information density, and key qualifiers unless the user explicitly asks for a viewpoint rewrite.
+
+## Two hard bans and the faithful-quotation exception (2026-10-20)
+
+**Two hard bans (original narration, target 0)**
+1. No em dash「——」; split with enumeration commas, commas, or periods.
+2. No "not A, but B" or any negate-then-correct equivalent: swapped verbs ("not called A, called B", "never mind, this is B", "doesn't mean A, it's B"), adverb variants ("not that X; rather Y"), and split-sentence copies (negation and correction in two sentences). Plain standalone negation does not count ("not every relationship is good", "he found it wasn't so" are fine).
+
+**Faithful-quotation exception**: famous sayings, classical texts, genuine direct quotes from the source book, and verified faithful translations are exempt, but only after verifying author, source, meaning, and translation; they must be quoted faithfully, including necessary negations; never dress up a self-made line as a quotation to dodge the bans.
+
+**Script report wording**: write "not detected by automatic scan," never "proven free of AI traces." Tools locate, humans judge; label each hit as quote-exempt, legal standalone negation, or violation. Other style issues stay soft judgments.
 
 ## Tools and references
 

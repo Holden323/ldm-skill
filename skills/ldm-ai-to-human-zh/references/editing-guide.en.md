@@ -24,7 +24,7 @@ AI should not invent "I've experienced this," "A friend of mine," or "I intervie
 
 ### Template density
 
-A single "not X, but Y," "you think X, but actually Y," parallelism, rhetorical question, or three-part structure does not need mechanical deletion. Handle only when they appear consecutively, repeat across drafts, or substitute for real argumentation. Common fixes:
+A single "you think X, but actually Y," parallelism, rhetorical question, or three-part structure does not need mechanical deletion. Handle only when they appear consecutively, repeat across drafts, or substitute for real argumentation. Common fixes:
 
 - Cut the setup; state the conclusion directly.
 - Change the syntax of one instance rather than synonym-swapping every occurrence.
@@ -36,7 +36,7 @@ Focus on whether words like "furthermore, in fact, it is worth noting that, esse
 
 ### Rhythm
 
-Short-video scripts and social content usually suit short paragraphs with alternating long and short sentences; professional documents can be more complete. Use periods, commas, semicolons, and dashes by meaning and breath, with no blanket bans. Just check whether consecutive sentence lengths and structures are too uniform.
+Short-video scripts and social content usually suit short paragraphs with alternating long and short sentences; professional documents can be more complete. Use periods, commas, and semicolons by meaning and breath. Em dashes are a hard ban; split with commas or periods (faithful-quotation exception in SKILL.md). Just check whether consecutive sentence lengths and structures are too uniform.
 
 ### Address
 
