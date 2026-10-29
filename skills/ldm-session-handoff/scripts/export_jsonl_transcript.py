@@ -6,6 +6,7 @@ Hermes 用 SQLite（export_transcript.py），Claude Code / Codex 用 JSONL 行�
 本脚本覆盖后两者的真实存储格式（2026-08-29 实测）：
 
   Claude Code  ~/.claude/projects/<工作目录编码>/<sessionId>.jsonl
+               （也查 $CLAUDE_CONFIG_DIR 和 ~/.claude-* 等多套配置）
   Codex        ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
 
 机制与 export_transcript.py 一致：直读原始记录逐条导出，禁止 AI 摘要冒充档案。
@@ -77,11 +78,30 @@ def truncate(text, max_chars, stats):
 
 # ───────────────────────── Claude Code ─────────────────────────
 
+def claude_config_dirs():
+    """本机可能有多套 Claude Code 配置：$CLAUDE_CONFIG_DIR 指定的、~/.claude、~/.claude-*。
+    当前会话所在的那套排第一；软链到同一处的只算一次。"""
+    cands = []
+    env = os.environ.get("CLAUDE_CONFIG_DIR")
+    if env:
+        cands.append(os.path.expanduser(env))
+    cands.append(os.path.expanduser("~/.claude"))
+    cands += sorted(glob.glob(os.path.expanduser("~/.claude-*")))
+    seen, out = set(), []
+    for c in cands:
+        real = os.path.realpath(c)
+        if real in seen or not os.path.isdir(os.path.join(c, "projects")):
+            continue
+        seen.add(real)
+        out.append(c)
+    return out
+
+
 def claude_project_dirs():
-    base = os.path.expanduser("~/.claude/projects")
-    if not os.path.isdir(base):
-        return []
-    return sorted(glob.glob(os.path.join(base, "*")))
+    dirs = []
+    for conf in claude_config_dirs():
+        dirs += sorted(glob.glob(os.path.join(conf, "projects", "*")))
+    return dirs
 
 
 def claude_list(date=None, limit=10):
@@ -96,7 +116,7 @@ def claude_list(date=None, limit=10):
             rows.append((mtime, os.path.basename(f)[:-6], proj))
     rows.sort(reverse=True)
     if not rows:
-        print("(没有符合条件的会话。确认 ~/.claude/projects/ 下有 *.jsonl)")
+        print("(没有符合条件的会话。确认 ~/.claude/projects/、~/.claude-*/projects/ 或 $CLAUDE_CONFIG_DIR/projects/ 下有 *.jsonl)")
         return
     print(f"{'sessionId':<40} {'最后活动':<20} 工作目录")
     for mtime, sid, proj in rows[:limit]:

@@ -54,10 +54,18 @@ description: >
 
 - Hermes SQLite：`scripts/export_transcript.py`
 - Claude Code / Codex JSONL：`scripts/export_jsonl_transcript.py`
+- WorkBuddy JSONL：`scripts/export_workbuddy_transcript.py`
+- DSH（DeepSeek Harness）会话：两步。① `node scripts/export_dsh_session.js <session.v4.jsonl.zstd> <原始.jsonl>`；② `python3 scripts/export_dsh_transcript.py <原始.jsonl> <对话全记录.md>`。
+  - ⚠️ DSH 的会话文件是**多帧拼接的 zstd**：`zstdDecompressSync` 只解得出第一帧（1.37MB 的文件只出 237 字节），必须逐帧循环解压，脚本已处理。
+  - 会话位置：`~/.dsh/sessions/<工作区目录名>/<session-id>/session.v4.jsonl.zstd`。当前会话 id 直接读环境变量 `DSH_SESSION_ID`，不用猜。
+  - 实测（2026-10-06）：1.37MB → 914 帧 → 3.1MB / 1493 行 JSONL；过滤后 88 条 user/assistant 可见消息。
+  - 事件类型：`user/message`（data.content[].text）、`assistant/message`（data.message.content[].text，另有 reasoning 与 tool-call 需过滤），其余 tool/result、request/* 、step/* 一律不出。
 
 脚本只负责导出原文，不负责生成路由器。先用 `--list` 找到会话，再指定会话和输出路径；本机存在多个后端时不要猜测。
 
-**当前活跃会话**不会出现在 `--list` 中。导出步骤：`session_search` 搜当前对话关键词 → 从结果提取 `session_id` → `export_transcript.py --session <id> --output <绝对路径>`。此路径对活跃会话和已结束会话同样有效。
+**当前活跃会话**：
+- WorkBuddy 后端会正常出现在 `--list` 里（2026-09-24 实测），直接取 sessionId 导出即可，不需要绕 `session_search`。
+- Hermes 后端的活跃会话不出现在 `--list` 中。导出步骤：`session_search` 搜当前对话关键词 → 从结果提取 `session_id` → `export_transcript.py --session <id> --output <绝对路径>`。此路径对活跃会话和已结束会话同样有效。
 
 ## 完成检查
 
@@ -90,10 +98,45 @@ description: >
 
 导出后必须核对条数：文件头写的消息数应与「用户条数 + 助手条数」一致，并与库里的实际条数量级相符。
 
-### 4. 本 skill 是软链，`skill_manage` 改不动（2026-09-11 实战教训）
+### 4. 改真源后先看清安装形态，不要凭记忆假设（2026-09-11 / 09-24 实战教训）
 
-`skill_manage` 会报 `not found in active profile`，因为真源在 ldm-skill 仓库里。改这个 skill 直接用 `patch` 工具改真源路径：
+真源永远在 ldm-skill 仓库：
 
 `/Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/ldm-session-handoff/SKILL.md`
 
-改完从软链路径（`/Users/likai/.hermes/skills/ldm-session-handoff/SKILL.md`）读回验证。
+**要改就改真源，不要在安装副本上改**，否则两边分叉。改完真源，第一件事是看清 WorkBuddy 那边的形态——同一台机器上可能混着两种，别凭记忆假设：
+
+```bash
+ls -la /Users/likai/.workbuddy-ai/skills/ldm-session-handoff
+```
+
+- **软链**（输出以 `lrwxr-xr-x` 开头，末尾 `-> /Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/...`）：真源即生效，**不用同步**，直接读回验证。
+- **复制目录**（`drwxr-xr-x`）：必须 rsync 重新同步，否则 WorkBuddy 读到的还是旧版：
+  ```bash
+  rsync -a --exclude=__pycache__ --exclude='*.pyc' --exclude=.DS_Store \
+    /Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/ldm-session-handoff/ \
+    /Users/likai/.workbuddy-ai/skills/ldm-session-handoff/
+  ```
+
+⚠️ **2026-09-24 已统一为软链**：`/Users/likai/.workbuddy-ai/skills/` 下全部是软链（`ganhuo-skill` + 6 个 `ldm-*`），改真源即刻生效。此前 ganhuo 是软链、其余 6 个是复制，曾出现静默丢失风险：Codex 端把 ganhuo-skill 从 82 行升到 84 行（2.1 版），WorkBuddy 端因软链才立刻读到新版——**若它当时还是复制形态，这次更新就丢了**。这就是要统一的原因。上面那套 rsync 流程只在遇到复制形态时才需要。
+
+其他平台：
+- **Hermes**：软链安装。`skill_manage` 会报 `not found in active profile`。改真源后从软链路径 `/Users/likai/.hermes/skills/ldm-session-handoff/SKILL.md` 读回验证。
+- **Grok**：thin bridge，只指向真源，不维护正文。
+
+跑 Python 脚本时加 `-B`（或设 `PYTHONDONTWRITEBYTECODE=1`），避免在仓库里生成 `__pycache__`，省掉清理动作。
+
+### 5. WorkBuddy 会话数据的存放位置（2026-09-24 实测）
+
+```
+~/.workbuddy-ai/projects/<工作目录编码>/<sessionId>.jsonl
+```
+
+工作目录编码规则：绝对路径里的 `/` 和空格都换成 `-`。例：
+
+`/Users/likai/WorkBuddy AI/2026-09-23-23-17-40`
+→ `Users-likai-WorkBuddy AI-2026-09-23-23-17-40`
+
+行结构用 `type` 字段区分：`message`（**唯一要导出的原文**）、`reasoning`（推理，过滤）、`function_call` / `function_call_result`（工具调用与输出，过滤）、`session-meta` / `file-history-snapshot` / `ai-title`（元数据，过滤）。
+
+user 消息里会塞一大段环境注入，真正的用户输入包在 `<user_query>...</user_query>` 里。`export_workbuddy_transcript.py` 优先取 user_query，取不到就剥掉 `system-reminder`。时间戳是**毫秒**，不是秒。
