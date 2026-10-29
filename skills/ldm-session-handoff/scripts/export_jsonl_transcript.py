@@ -143,10 +143,31 @@ def claude_extract(path, max_chars, stats):
     格式实测（v2.1.x）：
       type=user      message.content 是 str，或 block 数组（tool_result 要过滤）
       type=assistant message.content 是 block 数组，只取 type=text（thinking/tool_use 过滤）
+      type=attachment, attachment.type=queued_command  执行中途插入的用户消息（2026-10-29 实测），
+                     原文在 attachment.prompt；origin.kind 不是 human（其他窗口发来的跨会话消息等）的过滤
     """
     msgs = []
     for d in read_jsonl(path):
+        if d.get("type") == "attachment":
+            a = d.get("attachment") or {}
+            if a.get("type") != "queued_command":
+                continue
+            origin = a.get("origin")
+            if a.get("isMeta") or (isinstance(origin, dict) and origin.get("kind", "human") != "human"):
+                stats["filtered_env"] += 1
+                continue
+            p = a.get("prompt")
+            if isinstance(p, list):
+                p = "\n".join(b.get("text", "") for b in p if isinstance(b, dict) and b.get("type") == "text")
+            text = p.strip() if isinstance(p, str) else ""
+            if text:
+                msgs.append(("user", text, a.get("timestamp") or d.get("timestamp")))
+                stats["queued"] += 1
+            continue
         if d.get("type") not in ("user", "assistant"):
+            continue
+        if d.get("isCompactSummary"):
+            stats["filtered_summary"] += 1  # 上下文压缩生成的 AI 摘要，不是用户原文
             continue
         content = (d.get("message") or {}).get("content")
         ts = d.get("timestamp")
@@ -256,6 +277,10 @@ def write_markdown(msgs, meta_lines, out_path, max_chars, stats):
         lines.append(f"---\n注：{stats['truncated']} 条消息超长已截断至前 {max_chars} 字。原始内容仍在 jsonl 中，未丢失。")
     if stats["filtered_env"]:
         lines.append(f"注：已过滤 {stats['filtered_env']} 条环境注入消息（非用户原文）。")
+    if stats["filtered_summary"]:
+        lines.append(f"注：已剔除 {stats['filtered_summary']} 条上下文压缩摘要（AI 生成，非原文；压缩前的原文消息照常保留）。")
+    if stats["queued"]:
+        lines.append(f"注：其中 {stats['queued']} 条用户消息是助手执行中途插入的（queued_command），已按时间顺序收入。")
     out = os.path.expanduser(out_path)
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -302,7 +327,7 @@ def main():
         else:
             sys.exit("[错误] 本机 Claude Code 和 Codex 都有会话数据，--agent 必须显式指定 claude 或 codex")
 
-    stats = {"truncated": 0, "filtered_env": 0}
+    stats = {"truncated": 0, "filtered_env": 0, "queued": 0, "filtered_summary": 0}
 
     if args.list or (not args.session and not args.output):
         if agent == "claude":

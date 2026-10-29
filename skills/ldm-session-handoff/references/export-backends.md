@@ -22,6 +22,8 @@ python3 scripts/export_jsonl_transcript.py --agent claude --session <session_id>
 
 默认从 `~/.claude/projects/` 查找 JSONL。
 
+执行中途插入的用户消息存为 `attachment.type=queued_command`，脚本按时间顺序收入（其他窗口发来的跨会话消息过滤）；上下文压缩摘要（`isCompactSummary`）剔除。文件头注记会写明各自条数。
+
 ## Codex
 
 ```bash
