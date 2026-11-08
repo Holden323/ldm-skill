@@ -20,10 +20,18 @@ The skill will produce a full handoff by default (transcript + router + restart 
 
 ## Files
 
-- `SKILL.md`: Agent-facing entry point and core workflow.
-- `references/formats.md`: Output format templates for transcript, router, and restart prompt.
-- `references/export-backends.md`: Backend-specific export commands (Hermes SQLite, Claude Code JSONL, Codex JSONL).
-- `scripts/export_transcript.py`: Export from Hermes SQLite database.
-- `scripts/export_jsonl_transcript.py`: Export from Claude Code / Codex JSONL logs.
+- `SKILL.md` / `SKILL.en.md`: agent-facing entry point and core workflow.
+- `references/formats.md`: templates for the transcript, router (including the must-keep rules section) and restart prompt (including this window's scope and stop point).
+- `references/export-backends.md`: per-backend export commands and pitfalls (Hermes SQLite, Claude Code / Codex JSONL, WorkBuddy, DSH).
+- `references/maintenance.md`: only for editing this skill (source of truth, install forms, syncing).
+- `scripts/export_transcript.py`, `scripts/find_session.py`: Hermes SQLite.
+- `scripts/export_jsonl_transcript.py`: Claude Code / Codex JSONL.
+- `scripts/export_workbuddy_transcript.py`: WorkBuddy JSONL.
+- `scripts/export_dsh_session.js`, `scripts/export_dsh_transcript.py`: DSH.
+- `scripts/redact_secrets.py`: redacts common secret formats; the export scripts call it automatically.
+- `scripts/check_handoff.py`: checks that paths in the router and prompt exist and are not temporary, and that required sections and counts are present.
+- `scripts/update_index.py`: adds or updates this session in the archive root's `session_index.json`, with a backup.
 
-The transcript must come from a verifiable data source — the script reads the database directly, never generates from memory.
+Every `references/*.md` has an English `.en.md` counterpart.
+
+The transcript must come from a verifiable data source: the scripts read the session store directly and never generate from memory.

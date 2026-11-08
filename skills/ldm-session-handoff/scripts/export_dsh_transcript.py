@@ -47,3 +47,4 @@ with open(dst, 'w', encoding='utf-8') as f:
         f.write(f'## {who}｜{when}\n\n{text}\n\n')
 print('保留', len(rows), '条，过滤环境注入', skipped, '条')
 print('起', rows[0][0], '止', rows[-1][0])
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from redact_secrets import redact_file; redact_file(dst)   # 自动打码

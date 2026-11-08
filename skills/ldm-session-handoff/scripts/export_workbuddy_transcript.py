@@ -205,6 +205,7 @@ def write_markdown(msgs, meta_lines, out_path, max_chars, stats):
         f.write("\n".join(lines))
     print(f"[完成] 导出 {len(msgs)} 条消息 → {out}（{os.path.getsize(out)/1024:.1f} KB，"
           f"截断 {stats['truncated']} 条，剥离注入 {stats['filtered_env']} 条，跳过空消息 {stats['filtered_empty']} 条）")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from redact_secrets import redact_file; redact_file(out)   # 自动打码，文件头加「> 打码：」行
 
 
 def main():

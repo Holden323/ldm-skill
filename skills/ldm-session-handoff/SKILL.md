@@ -1,13 +1,12 @@
 ---
 name: ldm-session-handoff
 description: >
-  导出会话原文、生成任务路由器和重启提示语，帮助长任务跨会话恢复。用户说“会话存档”“保存聊天记录”“导出对话全记录”“生成路由器”“准备退出重启”或“给我重启提示语”时使用；普通文件归档不使用。
-  Export raw conversation transcripts, generate task routers and restart prompts to help long-running tasks resume across sessions. Triggered when the user says "session archive," "save chat log," "export full transcript," "generate router," "prepare to exit and restart," or "give me a restart prompt"; not used for ordinary file archiving.
+  导出会话原文、生成任务路由器和重启提示语，帮助长任务跨会话恢复，并让新会话不重犯上一会话的错。用户说“会话存档”“保存聊天记录”“导出对话全记录”“生成路由器”“准备退出重启”“交接到新窗口”或“给我重启提示语”时使用；普通文件归档不使用。
 ---
 
 # 会话交接
 
-目标是让下一次会话能核对原始记录，并快速恢复决定、产出、进度和待办。
+目标：下一次会话能核对原始记录，能快速恢复决定、产出、进度和待办，并且不重犯这一次的错。
 
 ## 按用户请求选择产物
 
@@ -20,13 +19,25 @@ description: >
 
 ## 完整交接流程
 
-1. 确认当前会话、主题和保存目录。优先使用用户已配置的存档根目录；否则使用当前工作区中的明确目录。
-2. 通过平台原生导出能力或本 Skill 的脚本读取 user/assistant 原文。不要凭记忆生成“全记录”。
-3. 生成路由器，只保留恢复任务需要的决定、产出、进度、待办和新教训。
-4. 核对文件存在、消息数量级合理、来源标记准确。
-5. 报告所有产物的绝对路径，最后直接给出可复制的重启提示语。
+1. **定位**：确认当前会话、主题和保存目录。用户明确指定的目录优先；否则读取 `~/.config/ldm/session-archive-root`（若存在，内容为存档根目录绝对路径），再回退到其他已配置的存档根目录或当前工作区中的明确目录。
+2. **导出原文**：用平台原生导出能力或本 Skill 的脚本（见下）读取 user/assistant 原文，不要凭记忆生成“全记录”。导出脚本写完会自动打码（`scripts/redact_secrets.py`），文件头多一行「> 打码：…」；有「候选」提示时人工看一眼。
+3. **写路由器**：按 [references/formats.md](references/formats.md)。重点写好两节：
+   - **新会话必守**：本次用户定下的红线、被纠正过的错，每条写明靠什么保证（脚本／钩子／停点等用户／只能自觉）。只能自觉的条目要在重启提示语里点名。
+   - **停点**：做到哪必须停下等用户。长任务按停点切窗口，一个窗口只做到下一个停点。
+4. **检查**：跑 `python3 -B scripts/check_handoff.py <路由器> --record <全记录> [--prompt <提示语文件>]`。它查四件事：路径是否存在；有没有落在临时目录（/tmp、scratchpad，会被清掉）；有没有 `~` 路径；必备小节、消息条数、打码行是否齐全。不过就改到过。凭据在临时目录的，先复制到长期目录再引用。
+5. **索引**：存档根目录有 `session_index.json` 时，跑 `python3 -B scripts/update_index.py --record <全记录> --router <路由器> --title "<做了什么、停在哪>"`。没有索引的存档根，脚本会自动跳过。
+6. **报告**：列出所有产物的绝对路径，最后直接给出可复制的重启提示语。重启提示语写明本窗口的范围和停点。
 
-格式见 [references/formats.md](references/formats.md)。只有需要选择或排查导出后端时才读 [references/export-backends.md](references/export-backends.md)。
+## 导出工具
+
+| 平台 | 脚本 |
+|---|---|
+| Claude Code、Codex（JSONL） | `scripts/export_jsonl_transcript.py --agent claude`（Codex 用 `--agent codex`） |
+| Hermes（SQLite） | `scripts/find_session.py` 找 id → `scripts/export_transcript.py` |
+| WorkBuddy（JSONL） | `scripts/export_workbuddy_transcript.py` |
+| DSH | `scripts/export_dsh_session.js` → `scripts/export_dsh_transcript.py` |
+
+先用 `--list`（Hermes 用 `find_session.py`）找到会话，再指定会话和输出路径；本机存在多个后端时不要猜测。各平台的会话位置、活跃会话怎么找、格式坑，见 [references/export-backends.md](references/export-backends.md)，需要选择或排查后端时再读。跑脚本加 `-B`。
 
 ## 原文真实性
 
@@ -35,108 +46,28 @@ description: >
 - 不把摘要、路由器或模型回忆标成原文。
 - 导出不完整时写明已获得的范围和“待补存”，不要声称数据必然永久存在。
 - 单条截断会损失原文；只有用户要求控制体积或平台限制无法避免时才截断，并在文件头记录阈值和数量。
+- 用户要求导出时，不要以“当前会话还在进行”为由放弃：每个后端都能导出活跃会话，先把 export-backends 里的找法试完，都失败再如实报告。
 
 ## 路由器
 
-路由器是恢复上下文的主力，重启提示语只是入口；原文负责回查，路由器负责恢复。它是导航，不复述整段对话。至少写清：
+路由器负责恢复上下文，原文负责回查，重启提示语只是入口。路由器是导航，不复述整段对话。至少写清：
 
 - 关键决策及其理由。
-- 存档点：按时间顺序列出做完并确认过的关卡及其凭据，让新会话一眼看到做到哪了。
-- 已完成产物的绝对路径与状态。
-- 资源版本：只写恢复时用错版本就会做错的依赖及其版本（skill、素材库、模板、工具）；还没定的状态、还没做的事，写进待办或下一步。
-- 正在进行的工作、下一步及其前置条件（动手之前必须先具备或确认什么）。
+- 新会话必守：红线、被纠正过的错，以及各自靠什么保证。
+- 存档点：按时间顺序列出做完并确认过的关卡及其凭据。
+- 已完成产物的绝对路径与状态（路径要长期有效）。
+- 资源版本：只写恢复时用错版本就会做错的依赖。
+- 进行中的工作、下一步、停点和前置条件。
 - 尚未解决的问题和明确待办。
 - 只有本次新出现且可复用的经验教训。
 
-外部链接只记录需要继续使用的最终入口。敏感凭证不写入路由器。
-
-## 导出工具
-
-- Hermes SQLite：`scripts/export_transcript.py`
-- Claude Code / Codex JSONL：`scripts/export_jsonl_transcript.py`
-- WorkBuddy JSONL：`scripts/export_workbuddy_transcript.py`
-- DSH（DeepSeek Harness）会话：两步。① `node scripts/export_dsh_session.js <session.v4.jsonl.zstd> <原始.jsonl>`；② `python3 scripts/export_dsh_transcript.py <原始.jsonl> <对话全记录.md>`。
-  - ⚠️ DSH 的会话文件是**多帧拼接的 zstd**：`zstdDecompressSync` 只解得出第一帧（1.37MB 的文件只出 237 字节），必须逐帧循环解压，脚本已处理。
-  - 会话位置：`~/.dsh/sessions/<工作区目录名>/<session-id>/session.v4.jsonl.zstd`。当前会话 id 直接读环境变量 `DSH_SESSION_ID`，不用猜。
-  - 实测（2026-10-06）：1.37MB → 914 帧 → 3.1MB / 1493 行 JSONL；过滤后 88 条 user/assistant 可见消息。
-  - 事件类型：`user/message`（data.content[].text）、`assistant/message`（data.message.content[].text，另有 reasoning 与 tool-call 需过滤），其余 tool/result、request/* 、step/* 一律不出。
-
-脚本只负责导出原文，不负责生成路由器。先用 `--list` 找到会话，再指定会话和输出路径；本机存在多个后端时不要猜测。
-
-**当前活跃会话**：
-- WorkBuddy 后端会正常出现在 `--list` 里（2026-09-24 实测），直接取 sessionId 导出即可，不需要绕 `session_search`。
-- Hermes 后端的活跃会话不出现在 `--list` 中。导出步骤：`session_search` 搜当前对话关键词 → 从结果提取 `session_id` → `export_transcript.py --session <id> --output <绝对路径>`。此路径对活跃会话和已结束会话同样有效。
+外部链接只记录需要继续使用的最终入口。敏感凭证不写入路由器和提示语。所有本地路径写展开后的绝对路径，不写 `~`。
 
 ## 完成检查
 
 - 交付内容与用户请求的产物范围一致。
-- 全记录文件头写明数据源、会话标识、时间范围、消息数和导出方式。
-- 完整交接时，两个文件均已报告绝对路径，重启提示语已直接发给用户。
+- `check_handoff.py` 通过：文件头的消息数等于正文条数，有打码行，路径都存在且不在临时目录，路由器有「新会话必守」和「当前进度与下一步」。
+- 完整交接时，两个文件都报告了绝对路径；有索引的存档根已更新索引；重启提示语已直接发给用户，并写了本窗口的范围和停点。
 - 失败和截断情况如实标注，没有用摘要冒充原文。
 
-## Pitfalls
-
-### 1. 永远不要声称"导不出来"（2026-09-04/09-08 实战教训）
-
-用户明确要求导出时，不得以"当前活跃session"为由放弃。导出路径：`session_search` 提取 session_id → `export_transcript.py --session <id>`。这招对活跃会话和已结束会话都有效。
-
-此错误已导致用户暴怒两次。如果 `--list` 找不到，换 `session_search`；如果 `session_search` 也找不到，如实报告，但先试完两条路再说。
-
-### 2. 重启提示语和路由器中必须使用绝对路径（2026-09-04/09-08 实战教训）
-
-- ❌ `~/Documents/Hermes_Workspace/...`（`~` 不是绝对路径，用户会暴怒）
-- ✅ `/Users/likai/Documents/Hermes_Workspace/...`
-
-所有文件路径一律用 `/Users/likai/` 开头。包括重启提示语、路由器产出清单、用户给的指引。用户已多次纠正此问题。
-
-### 3. 导出全记录不要按 `active = 1` 过滤（2026-09-11 实战教训）
-
-上下文压缩会把已压缩的老消息标成 `active = 0`，但那些**仍是被压缩前的真实原文**，全记录必须保留。按 `active = 1` 过滤会把长会话导成十分之一（实测某会话只导出 34 条，实际原文 162 条）——丢掉的正好是最早、最需要回查的那部分。
-
-只排除 `_compressed_summary = 1` 的行：那是压缩生成给模型看的 AI 摘要，不是原文。`export_transcript.py` 已修（commit 5844ac6）；确需只看当前活跃上下文时用 `--active-only`。
-上下文重建还会把历史整块重复入库（同一消息以 [Note: ...] 前缀变体反复重插），脚本已内置去重：块重放（连续3条以上同序同文）整块剔除、助手重复长文只留首次，用户消息不做全局去重（连发「1」是真实对话）。文件头会写明两类剔除条数。
-
-导出后必须核对条数：文件头写的消息数应与「用户条数 + 助手条数」一致，并与库里的实际条数量级相符。
-
-### 4. 改真源后先看清安装形态，不要凭记忆假设（2026-09-11 / 09-24 实战教训）
-
-真源永远在 ldm-skill 仓库：
-
-`/Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/ldm-session-handoff/SKILL.md`
-
-**要改就改真源，不要在安装副本上改**，否则两边分叉。改完真源，第一件事是看清 WorkBuddy 那边的形态——同一台机器上可能混着两种，别凭记忆假设：
-
-```bash
-ls -la /Users/likai/.workbuddy-ai/skills/ldm-session-handoff
-```
-
-- **软链**（输出以 `lrwxr-xr-x` 开头，末尾 `-> /Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/...`）：真源即生效，**不用同步**，直接读回验证。
-- **复制目录**（`drwxr-xr-x`）：必须 rsync 重新同步，否则 WorkBuddy 读到的还是旧版：
-  ```bash
-  rsync -a --exclude=__pycache__ --exclude='*.pyc' --exclude=.DS_Store \
-    /Users/likai/Documents/Hermes_Workspace/ldm-skill/skills/ldm-session-handoff/ \
-    /Users/likai/.workbuddy-ai/skills/ldm-session-handoff/
-  ```
-
-⚠️ **2026-09-24 已统一为软链**：`/Users/likai/.workbuddy-ai/skills/` 下全部是软链（`ganhuo-skill` + 6 个 `ldm-*`），改真源即刻生效。此前 ganhuo 是软链、其余 6 个是复制，曾出现静默丢失风险：Codex 端把 ganhuo-skill 从 82 行升到 84 行（2.1 版），WorkBuddy 端因软链才立刻读到新版——**若它当时还是复制形态，这次更新就丢了**。这就是要统一的原因。上面那套 rsync 流程只在遇到复制形态时才需要。
-
-其他平台：
-- **Hermes**：软链安装。`skill_manage` 会报 `not found in active profile`。改真源后从软链路径 `/Users/likai/.hermes/skills/ldm-session-handoff/SKILL.md` 读回验证。
-- **Grok**：thin bridge，只指向真源，不维护正文。
-
-跑 Python 脚本时加 `-B`（或设 `PYTHONDONTWRITEBYTECODE=1`），避免在仓库里生成 `__pycache__`，省掉清理动作。
-
-### 5. WorkBuddy 会话数据的存放位置（2026-09-24 实测）
-
-```
-~/.workbuddy-ai/projects/<工作目录编码>/<sessionId>.jsonl
-```
-
-工作目录编码规则：绝对路径里的 `/` 和空格都换成 `-`。例：
-
-`/Users/likai/WorkBuddy AI/2026-09-23-23-17-40`
-→ `Users-likai-WorkBuddy AI-2026-09-23-23-17-40`
-
-行结构用 `type` 字段区分：`message`（**唯一要导出的原文**）、`reasoning`（推理，过滤）、`function_call` / `function_call_result`（工具调用与输出，过滤）、`session-meta` / `file-history-snapshot` / `ai-title`（元数据，过滤）。
-
-user 消息里会塞一大段环境注入，真正的用户输入包在 `<user_query>...</user_query>` 里。`export_workbuddy_transcript.py` 优先取 user_query，取不到就剥掉 `system-reminder`。时间戳是**毫秒**，不是秒。
+修改本 Skill 本身（真源、安装形态、同步）时读 [references/maintenance.md](references/maintenance.md)。

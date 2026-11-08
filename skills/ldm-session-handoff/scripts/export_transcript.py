@@ -234,6 +234,7 @@ def export_session(conn: sqlite3.Connection, session_id: str, out_path: str,
         f.write("\n".join(lines))
     size_kb = os.path.getsize(out) / 1024
     print(f"[完成] 导出 {len(rows)} 条消息（排除块重放 {skipped_replay} 条、助手重复长文 {skipped_dup} 条） → {out}（{size_kb:.1f} KB，截断 {truncated_n} 条）")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from redact_secrets import redact_file; redact_file(out)   # 自动打码，文件头加「> 打码：」行
 
 
 def main():
