@@ -1,8 +1,8 @@
 ---
 name: ldm-memory-system
 description: >
-  设计、审查、整理和收尾由 Memory、项目文档、规则文件、Skill 与索引组成的长期认知资产系统，让它们和项目实际情况一致。用户说“搭建记忆系统”“清理 memory”“memory 体检”“整理知识库”“检查真源或失效指针”“Skill 太多了”时使用；项目、一集、一个阶段做完后说“收尾”“收个尾”“把文档和记忆同步一下”“文档和实际对不上了”“洁癖”“/neat”时也使用。不处理导出会话原文和重启提示语（交给 ldm-session-handoff）、纯写代码或调试、整理数据或文案本身。
-  Design, audit, maintain, and close out a long-term cognitive asset system of Memory, project docs, rule files, Skills, and pointers so they match what the project actually is. Use for "build memory system," "clean up memory," "memory health check," "organize knowledge base," "check source of truth or stale pointers," "too many skills," and after a project, episode, or phase is done: "wrap up," "close out," "sync docs and memory," "docs don't match reality," "neat," "/neat." Not for session transcript export or restart prompts (ldm-session-handoff), pure coding or debugging, or tidying data or prose itself.
+  设计、审查、整理和收尾由 Memory、项目文档、规则文件、Skill 与索引组成的长期认知资产系统，让它们和项目实际情况一致。用户说“搭建记忆系统”“清理 memory”“memory 体检”“整理知识库”“检查真源或失效指针”“Skill 太多了”时使用；项目、一集、一个阶段做完后说“收尾”“收个尾”“把文档和记忆同步一下”“文档和实际对不上了”“洁癖”“/neat”时也使用；说“回放最近的会话”“看看记忆有没有漏记、记错”“建主题页”时也使用。不处理导出会话原文和重启提示语（交给 ldm-session-handoff）、纯写代码或调试、整理数据或文案本身。
+  Design, audit, maintain, and close out a long-term cognitive asset system of Memory, project docs, rule files, Skills, and pointers so they match what the project actually is. Use for "build memory system," "clean up memory," "memory health check," "organize knowledge base," "check source of truth or stale pointers," "too many skills," and after a project, episode, or phase is done: "wrap up," "close out," "sync docs and memory," "docs don't match reality," "neat," "/neat"; also "replay recent sessions," "check memory for gaps or errors," "build a topic page." Not for session transcript export or restart prompts (ldm-session-handoff), pure coding or debugging, or tidying data or prose itself.
 ---
 
 # 认知资产治理
@@ -12,6 +12,7 @@ description: >
 ## 先确定任务模式
 
 - 收尾：一个项目、一集、一个阶段做完后，把文档、规则、记忆和工作区对齐到实际情况。读 [references/closeout.md](references/closeout.md) 按里面的流程做。用户没说名字、但明显在做收尾时也走这个模式。
+- 回放：隔一段时间（每周、一个大阶段之后），或怀疑记忆漏记、记错时，拿一段时间内的原始会话记录核对和补全记忆、维护主题页。读 [references/replay.md](references/replay.md) 按里面的流程做。
 - 诊断或体检：只读检查，给出证据和候选清单。
 - 搭建或重构：先了解现有项目与入口，再提出可审查的结构方案。
 - 执行整理：按用户明确授权的范围修改；涉及范围不明的删除或批量移动时，先给具体清单。
@@ -37,6 +38,8 @@ description: >
 - 配置文件或密钥存储：凭证、运行参数和环境事实。
 
 一条信息只设一个真源。其他层可留简短指针，但不要复制正文。Memory 的容量应由检索价值决定，不把它当完整数据库；各平台的加载上限见 [references/closeout.md](references/closeout.md) 的“记忆面”。
+
+同一主题的条目攒多了（大约 5 条以上，做这类事要同时想起好几条），可以在索引和条目之间加一页主题页：只做导航和归纳，链回原条目，不复制正文。做法见 [references/replay.md](references/replay.md) 的“主题页”。
 
 ## 维护流程
 

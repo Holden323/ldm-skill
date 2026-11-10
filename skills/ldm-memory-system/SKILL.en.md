@@ -8,7 +8,9 @@ description: >
   "检查真源或失效指针" (check source of truth or stale pointers), or "Skill 太多了" (too many skills);
   also after a project, episode, or phase is done: "收尾" / "收个尾" (wrap up),
   "把文档和记忆同步一下" (sync docs and memory), "文档和实际对不上了" (docs don't match reality),
-  "洁癖" (neat), or "/neat". Not for session transcript export or restart prompts
+  "洁癖" (neat), or "/neat"; and for "回放最近的会话" (replay recent sessions),
+  "看看记忆有没有漏记、记错" (check memory for gaps or errors), or "建主题页" (build a topic page).
+  Not for session transcript export or restart prompts
   (ldm-session-handoff), pure coding or debugging, or tidying data or prose itself.
 ---
 
@@ -19,6 +21,7 @@ The goal: important information lives at the right layer, has exactly one mainta
 ## Pick the task mode first
 
 - Closeout: after a project, episode, or phase is done, align docs, rules, memory, and the workspace with reality. Read [references/closeout.en.md](references/closeout.en.md) and follow its flow. Use this mode when the user is clearly wrapping up, even if they don't name it.
+- Replay: periodically (weekly, after a big phase), or when memory seems to have gaps or errors, check and fill in memory against raw session transcripts from a period, and maintain topic pages. Read [references/replay.en.md](references/replay.en.md) and follow its flow.
 - Diagnosis or health check: read-only inspection; deliver evidence and a candidate list.
 - Build or restructure: understand existing projects and entry points first, then propose a reviewable structure.
 - Execute cleanup: change things within the scope the user explicitly authorized; for deletions or bulk moves with unclear scope, give a concrete list first.
@@ -44,6 +47,8 @@ Apply the same judgment to Memory entries, docs, rule files, Skills, and pointer
 - Config files or secret stores: credentials, runtime parameters, and environment facts.
 
 One piece of information has one source of truth. Other layers may keep a short pointer but must not copy the body. Memory size should be driven by retrieval value, not used as a full database; per-platform load limits are in the "Memory surface" section of [references/closeout.en.md](references/closeout.en.md).
+
+When one topic accumulates entries (roughly five or more, and the work needs several of them at once), add a topic page between the index and the entries: navigation and synthesis only, linking back to the original entries, never copying bodies. See "Topic pages" in [references/replay.en.md](references/replay.en.md).
 
 ## Maintenance flow
 
