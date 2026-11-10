@@ -32,6 +32,9 @@ Start by asking three questions (what long-term projects do you have? which file
 **Maintenance** (daily / periodic):
 Scan the specified scope through four questions → produce an action list with evidence → deletions, overwrites, or batch migrations with unclear scope are confirmed by you → verify sources of truth and pointers after execution.
 
+**Closeout** (every time a project, episode, or phase is done):
+Say "wrap up" or "neat." Using the project's own progress files and real artifacts as the standard, it aligns entry docs, rule files, memory, and workspace residue, marks each surface "verified-current / changed-and-verified / pending / out-of-scope / not-applicable," reports in full first, and waits for you before deleting candidates. When the same mistake happens a third time, it proposes a script or hook instead of yet another rule.
+
 ## Core rules (three sentences)
 
 1. **Memory is a pointer, not a database** — full content lives in docs/Skills; Memory only holds navigation.
@@ -40,12 +43,13 @@ Scan the specified scope through four questions → produce an action list with 
 
 ## How does it work with other skills?
 
-- `ldm-session-handoff` (handoff) handles "no progress lost between sessions"; this skill handles "long-term memory doesn't decay."
-- Project wrap-up (code/docs mismatch) is neat-freak's job; this skill doesn't touch code.
+- `ldm-session-handoff` (handoff) handles "no progress lost between sessions"; this skill handles "long-term memory doesn't decay" and "knowledge aligned after finishing something." When you want both, close out first, then hand off.
+- Since 2026-11-10, project closeout is also this skill's job (it absorbed neat-freak's completion contract, anti-pattern list, and two-phase report), so neat-freak is no longer needed; writing or debugging code itself is out of scope.
 
 ## When should I use it?
 
 - You say "clean up memory"
 - You say "my memory system is a mess, help me set it up"
 - You say "organize my docs / too many skills"
+- A project, episode, or phase is done and you say "wrap up," "neat," or "sync docs and memory"
 - When the Agent writes new things into Memory, follow the write rules here

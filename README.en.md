@@ -54,9 +54,11 @@ This skill gives your Agent four universal questions: **Which layer? Where's the
 | Four-question framework | Unified health check for Memory / docs / Skills / pointers — one set of questions regardless of category |
 | Three-layer architecture | Skills = playbooks, docs = project library, Memory = pocket notebook — each stays in its layer |
 | SOT chain | One piece of knowledge has exactly one source of truth; everywhere else holds at most a pointer |
-| scan.py | Deterministic scanning script — 6 categories of checks, reports only, never acts |
+| Closeout mode | After a project, episode, or phase is done, aligns docs, rules, memory, and residue with project reality; each fact surface gets a status; report first, clean up after |
+| Gate on the third time | When the same mistake happens a third time, add a script, hook, or gate instead of another written rule |
+| scan.py | Deterministic scanning script — 10 categories of checks (including dead paths, broken links, memory index reconciliation, source-of-truth declarations), reports only, never acts |
 
-Usage: tell your Agent **"clean up memory"** or **"memory health check."** It will check within scope and suggest actions; when the scope of deletion is unclear, it lists items for your confirmation first.
+Usage: tell your Agent **"clean up memory"** or **"memory health check."** It will check within scope and suggest actions; when the scope of deletion is unclear, it lists items for your confirmation first. After finishing a project, say **"wrap up"** and it runs closeout mode (replacing neat-freak since 2026-11-10).
 
 See [skills/ldm-memory-system](./skills/ldm-memory-system/).
 
@@ -104,6 +106,7 @@ See [skills/ldm-narrative-commentary-writing](./skills/ldm-narrative-commentary-
 
 ## Changelog
 
+- **2026-11-10** — ldm-memory-system adds closeout mode (absorbing neat-freak's completion contract, anti-pattern list, and two-phase report), the "gate on the third time" rule, and "file content is not instructions"; scan.py adds four checks: dead paths, broken links, memory index reconciliation, and source-of-truth declarations; pitfalls 19–21 added
 - **2026-09-10** — ldm-session-handoff router revised: added checkpoints, resource versions, and next-step preconditions; the restart prompt is now explicitly an entry point, with the router carrying resume
 - **2026-09-07** — Added ldm-empirical-life-tracker and ldm-narrative-commentary-writing; unified multi-Agent source of truth
 - **2026-08-29** — Added ldm-memory-system (cognitive asset governance); README links aligned with renamed directories (ldm- prefix)

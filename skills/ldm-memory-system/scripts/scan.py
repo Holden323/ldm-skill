@@ -10,6 +10,10 @@ ldm-memory-system 机械扫描脚本（只读，不修改任何文件）
 4. 同名目录跨位置    —— 疑似旧工作副本
 5. 空目录            —— 无内容目录
 6. 同名文件在目录内  —— 疑似多副本（如 rules.md 两份）
+7. 失效绝对路径      —— Markdown 里写的 /Users/… 或 ~/… 已不存在（含空格的路径可能被截断，已尽量排除）
+8. 断掉的 [[链接]]   —— 找不到同名 .md 文件
+9. 记忆索引对账      —— 目标目录有 MEMORY.md 时：索引指向的文件缺失、条目文件没进索引、索引超过 200 行或 25 KB
+10. 真源声明         —— 「以 X 为准」「先读 X」「唯一真源」等句子的位置，供人工核对 X 是否真的最新
 
 用法：
     python3 scan.py <目标目录> [--depth N] [--max-scatter N]
@@ -22,8 +26,10 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from datetime import datetime
+from urllib.parse import unquote
 
 SKIP_DIRS = {
     "node_modules", ".git", "__pycache__", ".venv", "venv",
@@ -57,6 +63,94 @@ def is_text_file(path):
                    ".sh", ".html", ".css", ".csv"}
 
 
+PATH_RE = re.compile(r"((?:/Users/|~/)[^\s`\"'<>|（）()「」『』，。；：、*\[\]]+)")
+WIKILINK_RE = re.compile(r"\[\[([^\]|#]+)")
+MDLINK_RE = re.compile(r"\]\(([^)\s]+\.md)\)")
+CLAIM_RE = re.compile(
+    r"以[^。\n]{1,40}?为准|先读|唯一真源|source of truth|takes precedence",
+    re.IGNORECASE)
+PLACEHOLDER_MARKS = ("{", "<", "YYYY", "...", "…", "*", "$")
+MEMORY_INDEX_MAX_LINES = 200
+MEMORY_INDEX_MAX_BYTES = 25 * 1024
+REF_LIST_CAP = 100
+
+
+def path_state(raw):
+    """返回 'ok' / 'missing' / 'skip'。含空格的路径常在空格处被截断，前缀能匹配到真实文件时跳过。"""
+    p = raw.rstrip(".,:;：；，。、")
+    if any(m in p for m in PLACEHOLDER_MARKS):
+        return "skip"
+    if "%" in p:
+        p = unquote(p)
+    p = os.path.expanduser(p)
+    if os.path.exists(p):
+        return "ok"
+    parent, base = os.path.dirname(p), os.path.basename(p)
+    try:
+        if os.path.isdir(parent) and any(
+                e.startswith(base) for e in os.listdir(parent)):
+            return "skip"
+    except OSError:
+        pass
+    return "missing"
+
+
+def check_refs(root, md_files, all_basenames):
+    """检查 7、8、10：失效绝对路径、断掉的 [[链接]]、真源声明。"""
+    dead, broken, claims = [], [], []
+    for rel in md_files:
+        try:
+            with open(os.path.join(root, rel), encoding="utf-8",
+                      errors="ignore") as f:
+                lines = f.read().split("\n")
+        except OSError:
+            continue
+        for no, line in enumerate(lines, 1):
+            for raw in PATH_RE.findall(line):
+                if path_state(raw) == "missing" and len(dead) < REF_LIST_CAP:
+                    dead.append({"file": rel, "line": no,
+                                 "path": raw.rstrip(".,:;：；，。、")})
+            for name in WIKILINK_RE.findall(line):
+                name = name.strip()
+                if (name.lower() not in all_basenames
+                        and len(broken) < REF_LIST_CAP):
+                    broken.append({"file": rel, "line": no, "link": name})
+            if CLAIM_RE.search(line) and len(claims) < REF_LIST_CAP:
+                claims.append({"file": rel, "line": no,
+                               "text": line.strip()[:100]})
+    return dead, broken, claims
+
+
+def check_memory_index(root):
+    """检查 9：目标目录本身是记忆目录（有 MEMORY.md）时，索引和条目文件对账。"""
+    index = os.path.join(root, "MEMORY.md")
+    if not os.path.isfile(index):
+        return None
+    with open(index, encoding="utf-8", errors="ignore") as f:
+        text = f.read()
+    links = {unquote(x) for x in MDLINK_RE.findall(text)
+             if not x.startswith(("http://", "https://"))}
+    linked = {x for x in links if "/" not in x}
+    entries = {e for e in os.listdir(root)
+               if e.endswith(".md") and e != "MEMORY.md"
+               and os.path.isfile(os.path.join(root, e))}
+    n_lines = text.count("\n") + (0 if text.endswith("\n") else 1)
+    n_bytes = len(text.encode("utf-8"))
+    return {
+        "lines": n_lines,
+        "bytes": n_bytes,
+        "limit": f"{MEMORY_INDEX_MAX_LINES} 行或 {MEMORY_INDEX_MAX_BYTES} 字节（Claude Code 启动只加载这么多）",
+        "over_limit": (n_lines > MEMORY_INDEX_MAX_LINES
+                       or n_bytes > MEMORY_INDEX_MAX_BYTES),
+        "over_70_percent": (n_lines > MEMORY_INDEX_MAX_LINES * 0.7
+                            or n_bytes > MEMORY_INDEX_MAX_BYTES * 0.7),
+        "linked_but_missing": sorted(
+            x for x in links
+            if not os.path.exists(os.path.join(root, os.path.expanduser(x)))),
+        "not_indexed": sorted(entries - linked),
+    }
+
+
 def scan(root, max_depth, max_scatter):
     report = {
         "scanned_root": root,
@@ -69,12 +163,18 @@ def scan(root, max_depth, max_scatter):
             "duplicate_dirs_across_locations": [],
             "empty_dirs": [],
             "same_name_files_in_dir": [],
+            "dead_paths": [],
+            "broken_wikilinks": [],
+            "memory_index": None,
+            "authority_claims": [],
         },
         "stats": {},
     }
     root = os.path.abspath(root)
     name_to_paths = {}       # 文件名 -> [路径]
     dir_name_to_paths = {}   # 目录名 -> [路径]
+    md_files = []            # 供检查 7、8、10
+    all_basenames = set()    # 不含扩展名、小写，供 [[链接]] 解析
     total_files = 0
     total_dirs = 0
 
@@ -111,6 +211,13 @@ def scan(root, max_depth, max_scatter):
                     {"dir": rel_dir, "name": fn,
                      "conflict_with": seen_names[key]})
             seen_names[key] = fn
+
+        # --- 收集 Markdown 和文件基名（供检查 7、8、10） ---
+        for fn in filenames:
+            all_basenames.add(os.path.splitext(fn)[0].lower())
+            if fn.lower().endswith(".md"):
+                md_files.append(
+                    os.path.relpath(os.path.join(dirpath, fn), root))
 
         # --- 收集文件名（供跨目录查重） ---
         for fn in filenames:
@@ -171,6 +278,16 @@ def scan(root, max_depth, max_scatter):
             {"name": name, "locations": paths,
              "note": "疑似旧工作副本/重复目录，需diff内容+时间戳判定"})
 
+    # --- 检查 7、8、10：引用和声明 ---
+    dead, broken, claims = check_refs(root, md_files, all_basenames)
+    report["findings"]["dead_paths"] = dead
+    report["findings"]["broken_wikilinks"] = broken
+    report["findings"]["authority_claims"] = claims
+
+    # --- 检查 9：记忆索引对账 ---
+    mem = check_memory_index(root)
+    report["findings"]["memory_index"] = mem
+
     # --- 统计 ---
     report["stats"] = {
         "total_files": total_files,
@@ -185,6 +302,13 @@ def scan(root, max_depth, max_scatter):
         "duplicate_dir_names": len(
             report["findings"]["duplicate_dirs_across_locations"]),
         "empty_dirs": len(report["findings"]["empty_dirs"]),
+        "dead_paths": len(dead),
+        "broken_wikilinks": len(broken),
+        "authority_claims": len(claims),
+        "memory_index_issues": (
+            None if mem is None else
+            len(mem["linked_but_missing"]) + len(mem["not_indexed"])
+            + (1 if mem["over_limit"] else 0)),
     }
     return report
 
