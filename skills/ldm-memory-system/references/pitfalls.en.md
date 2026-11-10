@@ -129,3 +129,21 @@ During memory cleanup, deleted the entire "Claude Code three APIs" entry, reason
 ① Deletion must use `remove`; `replace` cannot accept empty content ② Entries may be merged with §; `old_text` must match the full entry text — matching only half gives "no entry matched"; on failure, check `current_entries` for real boundaries ③ Batch operations are all-or-nothing: one failure rolls back everything; the error identifies which operation # failed; fix it and resend the whole batch ④ When capacity is exceeded, new entries can't be written: within the same batch, you must shrink/merge old entries before adding new ones, and the shrink amount must ≥ the add amount; otherwise "would be over the limit" rolls back everything.
 
 **Lesson:** The memory tool's gotchas all come from "wrong mental model" — not knowing entry boundaries or the budget mechanism leads to repeated failures. Consolidated: 2026-08-31.
+
+### 19. Inverted authority: an entry point declares an outdated copy as the source of truth (2026-11-10, real case)
+
+The memory index that the agent loads automatically began with "Read the workspace memory first; the workspace version wins; this file is only an index." Reality was the reverse: the workspace copy had stopped updating six months earlier and still carried void hard limits ("never access anything outside the workspace") and an old income snapshot, while the file declared "just an index" was the one kept current. Every session loaded outdated rules at top priority, which is harder to spot than ordinary duplicate conflicts.
+
+**Lesson:** Finding the source of truth means more than checking which copy changes most often. Search for every "X wins" / "read X first" declaration and verify that X really is current. When the declaration contradicts reality, list the direction change as an item for the user to decide, and mark the old copy "historical archive" at the top.
+
+### 20. Phantom config: a file no tool reads is maintained as if it were in effect (2026-11-10, real case)
+
+The workspace root held a `.claudeignore`, and a project rule required adding each finished book to its exclusion list. The agent tool in use did not support that file, so it never took effect, and the rule maintaining it became a zombie too.
+
+**Lesson:** During audits, check "who actually reads this" for ignore files, config files and hooks. Delete config that no tool reads together with the rules referencing it, and rewrite the rule's real intent as text the agent can follow.
+
+### 21. Stale status promises: the artifact changed but the docs still state the old status (2026-11-10, real case)
+
+A backup folder's notes said "the local copy of the supplement package stays until the user approves deletion" and "about 3.6 GB". In fact the tar was no longer on the machine and the folder had grown to 11 GB. The next agent would either assume the backup was lost or reason from the wrong size.
+
+**Lesson:** Status sentences in docs ("uploaded / not deleted / size / version") are pointers too; reconcile them against the real artifacts during audits. When they disagree, ask the user for the actual status, then fix the docs on the spot and log one line in the change history.
