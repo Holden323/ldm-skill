@@ -44,7 +44,8 @@ Don't treat "git status is clean," "the user said so," or "self-check passed" al
 3a. **Flow back to the shared knowledge layer.** Follow the "Flow back to the shared knowledge layer" section below; with no cross-project lesson, write "nothing flowed back this time."
 4. **Check for gates.** If an error from this session is the third occurrence in rules, memory, or the pitfall log, handle it per "Third time the same mistake happens, add a gate" in the main entry.
 5. **Count residue.** One-off plan docs, debug scripts, `xxx_old`, `xxx_backup`, test frames, temporary previews. Where the user already has an explicit rule such as "delete regenerable intermediates directly," follow it and list what was deleted in the report; everything else goes on the deletion candidate list with reasons.
-6. **Report, then stop.** Give the full report using the template below and keep the scene intact. Deletion candidates, commits, and pushes wait until the user explicitly confirms after reading the report. "Clean up when done" in the original request does not replace this post-report confirmation.
+5a. **Local Git commit (default in closeout).** Set by the user on 2026-11-13: closing out means committing this stage, without asking separately. For each Git repo in scope: first check `git diff --cached`; if anyone else (another window or agent) has staged changes, unstage them and do not commit for them; then `git add` only the files this session changed or produced, path by path (no `git add -A` or `git add .`), excluding originals, caches, render outputs and anything in .gitignore; write a commit message saying what this stage did, with any attribution lines the user's rules require. **Do not push**: pushing still needs the user's explicit yes each time. Leave other people's uncommitted changes as they are and list them in the report. Mark projects without Git `not-applicable`.
+6. **Report, then stop.** Give the full report using the template below and leave the scene intact. Deletion candidates and pushes wait for the user's explicit confirmation after reading the report (the local commit is already done in 5a; the report gives the commit hash and what was committed). "Clean up when done" in the original request does not replace this post-report confirmation.
 7. **Clean up (after confirmation).** Delete only confirmed items; re-check afterwards and add a short follow-up report of what was actually deleted and any remaining warnings.
 
 ## Flow back to the shared knowledge layer
@@ -93,7 +94,7 @@ The shared knowledge layer is a knowledge area the user keeps for several agents
 - Rule files: <status>
 - Memory: <status> — <entries deleted / changed / added>
 - Workspace residue: <status>
-- Git and backups: <status>
+- Git and backups: <status> — <commit hash per repo, what was committed; others' uncommitted changes left alone>
 - Shared knowledge layer: <status> — <which lessons flowed back and where; or "nothing flowed back this time">
 
 **For you to confirm**
