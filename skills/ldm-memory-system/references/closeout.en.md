@@ -24,6 +24,7 @@ The default write boundary is the in-scope projects and memory. Read upper-level
 | Memory | Are states, versions, and paths in memory still accurate? Any progress logs? | Memory index, related entries |
 | Workspace residue | Any session leftovers, intermediates, uncommitted changes? | git status, temp scripts, test frames, old copies |
 | Git and backups | Is what should be committed committed? Anyone else's staged changes? | git status, diff --cached, daily snapshot log |
+| Progress board | Does the user's all-projects progress board show the in-scope projects as they are now? | See "Update the progress board" below; mark `not-applicable` if the user has no board |
 | Shared knowledge layer | Did lessons that hold across projects flow back? | See "Flow back to the shared knowledge layer" below; mark `not-applicable` if the user has no shared layer |
 
 Mark each surface as one of:
@@ -42,11 +43,24 @@ Don't treat "git status is clean," "the user said so," or "self-check passed" al
 2. **Align facts.** With project reality as the standard, rewrite stale entry docs, version numbers, paths, and status sentences in place ("uploaded," "not deleted," "size," "next step" are pointers too). Edit the existing entry rather than appending a parallel version. Mark what can't be verified as `pending`.
 3. **Tidy memory.** Subtract first: delete finished to-dos, progress logs, and superseded statements; use absolute dates for state; progress stays in project files, memory keeps red lines, preferences, and pointers. Record only lessons that really happened and are reusable; "no new lesson this time" is a valid result. Update any topic pages touched by this round's changes (how topic pages work: "Topic pages" in [replay.en.md](replay.en.md)).
 3a. **Flow back to the shared knowledge layer.** Follow the "Flow back to the shared knowledge layer" section below; with no cross-project lesson, write "nothing flowed back this time."
+3b. **Update the progress board.** Follow the "Update the progress board" section below; mark `not-applicable` if the user has no board.
 4. **Check for gates.** If an error from this session is the third occurrence in rules, memory, or the pitfall log, handle it per "Third time the same mistake happens, add a gate" in the main entry.
 5. **Count residue.** One-off plan docs, debug scripts, `xxx_old`, `xxx_backup`, test frames, temporary previews. Where the user already has an explicit rule such as "delete regenerable intermediates directly," follow it and list what was deleted in the report; everything else goes on the deletion candidate list with reasons.
 5a. **Local Git commit (default in closeout).** Set by the user on 2026-11-13: closing out means committing this stage, without asking separately. For each Git repo in scope: first check `git diff --cached`; if anyone else (another window or agent) has staged changes, unstage them and do not commit for them; then `git add` only the files this session changed or produced, path by path (no `git add -A` or `git add .`), excluding originals, caches, render outputs and anything in .gitignore; write a commit message saying what this stage did, with any attribution lines the user's rules require. **Do not push**: pushing still needs the user's explicit yes each time. Leave other people's uncommitted changes as they are and list them in the report. Mark projects without Git `not-applicable`.
 6. **Report, then stop.** Give the full report using the template below and leave the scene intact. Deletion candidates and pushes wait for the user's explicit confirmation after reading the report (the local commit is already done in 5a; the report gives the commit hash and what was committed). "Clean up when done" in the original request does not replace this post-report confirmation.
 7. **Clean up (after confirmation).** Delete only confirmed items; re-check afterwards and add a short follow-up report of what was actually deleted and any remaining warnings.
+
+## Update the progress board
+
+> Added 2026-11-16. When the user keeps one board for where every project stands (its data file is the single record), closeout brings it in line with reality. Before, this rested on one line in the user's rule file, and a delivered project's card was still showing a stage from days earlier.
+
+Where the board lives and who owns which fields comes from the user's rule files or memory; the Skill does not hard-code paths.
+
+1. Read the editing rules at the top of the board's data file first and follow them (common ones: change values, never field names; set the checked date to today when you edit a card; write "to verify" when you cannot confirm).
+2. Edit only the cards of projects in scope: stage, next step, results and checked date, from the project's progress file and deliverables; change the status on delivery, pause or stop.
+3. Do not edit fields the user fills in (priorities, this week/month tasks, daily to-dos and the like); if one looks stale, ask in the report.
+4. Other progress records outside the board (cards on a topic board, say) need the user's yes before adding; without it, mention them in the report only.
+5. If the board syncs on its own, do not push by hand; after editing, self-check once per its rules (the page opens, the data file parses).
 
 ## Flow back to the shared knowledge layer
 
@@ -95,6 +109,7 @@ The shared knowledge layer is a knowledge area the user keeps for several agents
 - Memory: <status> — <entries deleted / changed / added>
 - Workspace residue: <status>
 - Git and backups: <status> — <commit hash per repo, what was committed; others' uncommitted changes left alone>
+- Progress board: <status> — <which card, which fields changed; fields left for the user>
 - Shared knowledge layer: <status> — <which lessons flowed back and where; or "nothing flowed back this time">
 
 **For you to confirm**
