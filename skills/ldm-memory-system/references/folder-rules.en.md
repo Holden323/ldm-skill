@@ -20,7 +20,7 @@
 
 ### ① One folder = one project
 - A topic with 3+ related files → create a folder; scattered files go in
-- Counterexample: `li-damo-energy-management.md` sits in the root while `writer-li-damo/` exists → orphan, should be moved in
+- Counterexample: `energy-management.md` sits in the root while `personal-growth-writing/` exists → orphan, should be moved in
 
 ### ② Project folder naming
 - Use the project name, **no date/version/sequence prefix** (versions live in files as V1/V2, dates in filenames)

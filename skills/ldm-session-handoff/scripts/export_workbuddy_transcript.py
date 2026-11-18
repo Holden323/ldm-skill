@@ -9,8 +9,8 @@ WorkBuddy 也用 JSONL，但字段结构不同，所以单独一个后端。
   ~/.workbuddy-ai/projects/<工作目录编码>/<sessionId>.jsonl
 
   工作目录编码规则：绝对路径里的 `/` 和空格都换成 `-`
-  例：/Users/likai/WorkBuddy AI/2026-09-23-23-17-40
-    → Users-likai-WorkBuddy AI-2026-09-23-23-17-40
+  例：/Users/alice/WorkBuddy AI/2026-09-23-23-17-40
+    → Users-alice-WorkBuddy AI-2026-09-23-23-17-40
 
 行结构（type 字段区分）：
   message                 ← 唯一要导出的原文。role=user/assistant，content=[{type:input_text|output_text, text}]

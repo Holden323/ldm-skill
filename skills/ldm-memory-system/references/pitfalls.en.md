@@ -108,7 +108,7 @@ The knowledge-base/ versions of project-status/rules/user-preferences were updat
 
 ### 15. Root README out of sync with actual structure (2026-08-28 battle-tested)
 
-The Hermes_Workspace root README described "topic library / source material library / published / data analysis," but the reality was 18 real project directories — the README was written early in the project and never updated. Users following the README would find nothing.
+A workspace's root README described "topic library / source material library / published / data analysis," but the reality was 18 real project directories — the README was written early in the project and never updated. Users following the README would find nothing.
 
 **Lesson:** The root README must be periodically reconciled with the actual structure. During scanning, compare the README's described directories vs. the actual `ls` output; all mismatched = README is stale — rewrite it.
 

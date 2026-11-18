@@ -81,7 +81,7 @@ knowledge-base/ 的 project-status/rules/user-preferences 都是更新版（6月
 **教训**：真源文档（rules/preferences/status）只允许存在于 knowledge-base/ 一处，根目录同名旧版必须删。扫描时 diff 同名文件，不同=分叉，以最新时间戳+内容完整度判定真源。
 
 ### 15. 工作区根README与实际结构脱节（2026-08-28实战）
-Hermes_Workspace 根README描述"选题库/素材库/已发布/数据分析"，实际是18个真实项目目录——README是项目早期写的，从未更新。用户按README找目录会全部扑空。
+一个工作区的根README描述"选题库/素材库/已发布/数据分析"，实际是18个真实项目目录——README是项目早期写的，从未更新。用户按README找目录会全部扑空。
 **教训**：根README要定期与实际结构对账。扫描时对比README描述的目录 vs 实际ls的目录，全对不上=README过期，直接重写。
 
 ### 16. 同名目录跨位置重复=旧副本（2026-08-28实战）
